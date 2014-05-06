@@ -1,3 +1,10 @@
+// GoBalloon
+// gps.go - GPS controller code
+//
+// (c) 2014, Christopher Snell
+// This code borrows heavily from https://github.com/stratoberry/go-gpsd
+// Some portions (c) 2013 Stratoberry Pi Project
+
 package main
 
 import (
