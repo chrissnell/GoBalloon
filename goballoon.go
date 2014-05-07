@@ -1,3 +1,8 @@
+// GoBalloon
+// goballoon.go - Main controller code
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (

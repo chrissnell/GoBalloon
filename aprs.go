@@ -1,3 +1,8 @@
+// GoBalloon
+// aprs.go - APRS controller code
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (
