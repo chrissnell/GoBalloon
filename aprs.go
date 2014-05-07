@@ -36,6 +36,6 @@ func aprsBeacon() {
 func processIncomingAPRSMessage() {
 	select {
 	case newMessage := <-aprsMessage:
-		fmt.Println(newMessage)
+		fmt.Println("--- APRS Message: ", newMessage)
 	}
 }
