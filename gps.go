@@ -16,10 +16,6 @@ import (
 	"time"
 )
 
-const (
-	RECV_BUFFER_LEN = 2048
-)
-
 type Session struct {
 	socket net.Conn
 	reader *bufio.Reader
