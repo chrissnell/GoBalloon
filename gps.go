@@ -16,6 +16,12 @@ import (
 	"time"
 )
 
+type Point struct {
+	lat float64
+	lon float64
+	alt float64
+}
+
 type Session struct {
 	socket net.Conn
 	reader *bufio.Reader
@@ -46,29 +52,38 @@ type TPVSentence struct {
 	Epc    float64   `json:"epc"`
 }
 
-func connectToGPSD() (session *Session) {
-	fmt.Println("--- Connecting to gpsd")
-	session = new(Session)
-	var err error
-	session.socket, err = net.Dial("tcp", "127.0.0.1:2947")
-	if err != nil {
-		fmt.Printf("--- %v\n", err)
-		fmt.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
-		time.Sleep(5000 * time.Millisecond)
-		connectToGPSD()
-	}
-	session.reader = bufio.NewReader(session.socket)
-	return
-}
+func readFromGPSD(msg chan string) {
+	session := new(Session)
 
-func readFromGPSD(msg chan string, s *Session) {
 	for {
-		line, err := s.reader.ReadString('\n')
+		fmt.Println("--- Connecting to gpsd")
+		session = new(Session)
+		fmt.Println("--- Created new session")
+		var err error
+		session.socket, err = net.Dial("tcp", "127.0.0.1:2947")
 		if err != nil {
-			fmt.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
-			time.Sleep(1000 * time.Millisecond)
-		} else {
-			msg <- line
+			fmt.Printf("--- %v\n", err)
+			fmt.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
+			time.Sleep(5000 * time.Millisecond)
+			continue
+		}
+
+		_, err = session.socket.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
+		if err != nil {
+			log.Printf("--- ERROR: Could not send WATCH command to gpsd: %v", err)
+		}
+
+		session.reader = bufio.NewReader(session.socket)
+
+		for {
+			line, err := session.reader.ReadString('\n')
+			if err != nil {
+				fmt.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
+				time.Sleep(1000 * time.Millisecond)
+				break
+			} else {
+				msg <- line
+			}
 		}
 	}
 }
@@ -92,7 +107,10 @@ func processGPSDSentences(msg chan string) {
 					break
 				}
 				fmt.Println("--- TPV sentence received")
-				fmt.Printf("--- LAT: %v   LON: %v\n", tpv.Lat, tpv.Lon)
+				currentPosition.lon = tpv.Lon
+				currentPosition.lat = tpv.Lat
+				currentPosition.alt = tpv.Alt
+				fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
 			}
 		}
 	}
@@ -101,14 +119,7 @@ func processGPSDSentences(msg chan string) {
 func GPSRun() {
 	msg := make(chan string, 100)
 
-	s := connectToGPSD()
-
-	_, err := s.socket.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
-	if err != nil {
-		log.Fatalln("--- ERROR: Could not send WATCH command to gpsd.")
-	}
-
-	go readFromGPSD(msg, s)
+	go readFromGPSD(msg)
 	go processGPSDSentences(msg)
 
 }

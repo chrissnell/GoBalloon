@@ -13,13 +13,16 @@ import (
 )
 
 var (
-	timeToDie = make(chan bool, 1)
+	timeToDie       = make(chan bool, 1)
+	currentPosition Point
 )
 
 func main() {
 	fmt.Println("Starting up.")
+
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
+
 	go CameraRun()
 	go aprsBeacon()
 	go GPSRun()
