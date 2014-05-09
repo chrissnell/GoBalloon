@@ -23,9 +23,11 @@ func aprsBeacon() {
 			break
 		default:
 			go processIncomingAPRSMessage()
-			fmt.Println("--- Sending an APRS beacon")
-			var amsg = "hi"
-			aprsMessage <- amsg
+			fmt.Println("--- Sending an APRS position beacon")
+			if currentPosition.lat != 0 || currentPosition.lon != 0 {
+				var amsg = fmt.Sprintf("hi lat=%v lon=%v alt=%v", currentPosition.lat, currentPosition.lon, currentPosition.alt)
+				aprsMessage <- amsg
+			}
 			timer := time.NewTimer(time.Second * 10)
 			<-timer.C
 
