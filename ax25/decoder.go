@@ -2,10 +2,9 @@ package ax25
 
 import (
 	"bufio"
-	"bytes"
-	"flag"
-	"fmt"
-	"log"
+	"errors"
+	"io"
+	"strings"
 )
 
 // APRSAddress represents an AX.25 source or destination address
@@ -39,6 +38,7 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{bufio.NewReader(r)}
 }
 
+// Process the next APRS packet we get
 func (d *Decoder) Next() (APRSData, error) {
 	var err error
 	frame := []byte{}
@@ -54,7 +54,7 @@ func (d *Decoder) Next() (APRSData, error) {
 	return decodeMessage(frame)
 }
 
-func parseAX25Address(in []byte) sAPRSAddress {
+func parseAX25Address(in []byte) APRSAddress {
 	out := make([]byte, len(in))
 
 	// We iterate through each byte of the address and shift right one bit.
@@ -66,10 +66,11 @@ func parseAX25Address(in []byte) sAPRSAddress {
 	// them off.
 
 	a := APRSAddress{
-		Callsign: bytes.TrimSpace(string(out[:len(out)-1])),
+		Callsign: strings.TrimSpace(string(out[:len(out)-1])),
 		SSID:     uint8(out[len(out)-1] & 0xf),
 	}
 
+	return a
 }
 
 func decodeMessage(frame []byte) (dm APRSData, err error) {
@@ -106,28 +107,30 @@ func decodeMessage(frame []byte) (dm APRSData, err error) {
 		return
 	}
 
-	// Discard the first two bytes, 0xc0 (frame delimieter) and 0x00 (command)
-	frame = frame[:len(frame)-2]
+	//origFrame := frame
+
+	// Discard the first byte (0x00, the AX.25 Command field)
+	frame = frame[:len(frame)-1]
 
 	// Next comes the 7-byte destination address. AX.25 addresses are in the format CCCCCCS,
 	// where C = callsign and S = SSID.  Since each btye of the address is shifted one
 	// bit to the left, we'll use our decodeAddr() to decode it.  Gotta love 1980s protocols!
-	dm.Dest = parseAX25Address(frame[0:6])
+	dm.Dest = parseAX25Address(frame[1:8])
 
 	// Next verse same as the first.  Same old protocol, could be worse.
-	dm.Source = parseAX25Address(frame[6:13])
+	dm.Source = parseAX25Address(frame[8:15])
 
 	// Initialize our message's path with an empty array of APRSAddress
 	dm.Path = []APRSAddress{}
 
 	// At this point, we can discard the parts of the packet we've already processed
-	frame = frame[13:]
+	frame = frame[15:]
 
 	// Now we're going to bite off 7-byte chunks of the frame and decode them as digipeater
 	// addresses to be stored in our dm.Path array.  We stop when we reach the Control Field
 	// section of packet, which is delimited by a 0x03.
-	for frame[0] != 0x03 && len(frame) > 7 {
-		dm.Path.append(parseAX25Address(frame[:7]))
+	for len(frame) > 7 && frame[0] != 3 {
+		dm.Path = append(dm.Path, parseAX25Address(frame[:7]))
 		// As we parse each digipeater address, we remove it from the remaining frame
 		frame = frame[7:]
 	}
@@ -135,14 +138,14 @@ func decodeMessage(frame []byte) (dm APRSData, err error) {
 	// At this point, if there's less than 2 bytes remaining in the frame, or we don't
 	// have the Control Field (0x03) or Protocol ID (0xf0) at the beginning of the remaining
 	// frame, we have a truncated frame, so we throw an error.
-	if len(frame) < 2 || frame[0] != 0x03 || frame[1] != 0xf0 {
+	if len(frame) < 2 || frame[0] != 3 || frame[1] != 0xf0 {
 		err = errTruncatedMsg
 		return
 	}
 
 	// If we're still going now, we can safely assume that everything remaining is APRS
 	// data.   We'll convert the remaining bytes to a string and save it as the APRSMessage body.
-	dm.Body(string(frame[2:]))
+	dm.Body = Info(string(frame[2:]))
 
 	return
 
