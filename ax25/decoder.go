@@ -3,6 +3,7 @@ package ax25
 import (
 	"bufio"
 	"errors"
+	_ "fmt"
 	"io"
 	"strings"
 )
@@ -41,6 +42,7 @@ func NewDecoder(r io.Reader) *Decoder {
 // Process the next APRS packet we get
 func (d *Decoder) Next() (APRSData, error) {
 	var err error
+
 	frame := []byte{}
 	// Keep reading so long as our frame is < 15 bytes
 	for len(frame) <= reasonableSize {
@@ -51,6 +53,16 @@ func (d *Decoder) Next() (APRSData, error) {
 			return APRSData{}, err
 		}
 	}
+
+	// For debugging, uncomment the following:
+	/*	fmt.Println("Byte#\tHexVal\tChar\tChar>>1\tBinary")
+		fmt.Println("-----\t------\t----\t-------\t------")
+		for k, v := range frame {
+			rs := v >> 1
+			fmt.Printf("%4d \t%#x \t%v \t%v\t%08b\n", k, v, string(v), string(rs), v)
+		}
+	*/
+
 	return decodeMessage(frame)
 }
 
