@@ -14,14 +14,14 @@ type APRSAddress struct {
 }
 
 // AX.25 Information field
-type Info string
+//type Info string
 
 type APRSData struct {
 	Original string
 	Source   APRSAddress
 	Dest     APRSAddress
 	Path     []APRSAddress
-	Body     Info
+	Body     string
 }
 
 type Decoder struct {
@@ -97,8 +97,9 @@ func decodeMessage(frame []byte) (dm APRSData, err error) {
 	   Frame End (FEND)   1 byte (0xc0)
 	   ------------------------------------------------------------------------------------
 
-	   Source: TAPR APRS Specifiction  http://www.aprs.org/doc/APRS101.PDF
-	           KISS Wikipedia page     http://en.wikipedia.org/wiki/KISS_(TNC)
+	   Source: TAPR APRS Specifiction  						http://www.aprs.org/doc/APRS101.PDF
+	           AX.25 Link-Layer Protocol Specification		https://www.tapr.org/pub_ax25.html
+	           KISS Wikipedia page  						http://en.wikipedia.org/wiki/KISS_(TNC)
 
 	*/
 
@@ -145,7 +146,7 @@ func decodeMessage(frame []byte) (dm APRSData, err error) {
 
 	// If we're still going now, we can safely assume that everything remaining is APRS
 	// data.   We'll convert the remaining bytes to a string and save it as the APRSMessage body.
-	dm.Body = Info(string(frame[2:]))
+	dm.Body = string(frame[2:])
 
 	return
 

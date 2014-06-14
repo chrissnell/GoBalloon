@@ -1,10 +1,25 @@
 package ax25
 
 import (
+	"bytes"
 	"errors"
+	"fmt"
 )
 
-func CreatePacket(a APRSData) (em []byte, err error) {
+// A mask of 11100000, merged into the SSID byte with inclusive OR
+// If this is an AX.25 command packet, we merge it into the destination
+// address.  Otherwise, for an AX.25 response packet, we merge it into the
+// source address
+var setSSIDMask = byte(0x70 << 1)
+
+// A mask of 01100000, merged into the SSID byte with inclusive OR
+// If this is an AX.25 command packet, we merge it into the source
+// address.  Otherwise, for an AX.25 response packet, we merge it into the
+// destination address
+var clearSSIDMask = byte(0x30 << 1)
+
+func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
+
 	if len(a.Source.Callsign) < 4 {
 		err = errors.New("Invalid source address.")
 		return
@@ -20,58 +35,82 @@ func CreatePacket(a APRSData) (em []byte, err error) {
 			Callsign: "APZ001",
 		}
 	}
-	destaddr := encodeAX25Address(a.Dest)
 
-	sourceaddr := encodeAX25Address(a.Source)
-
-	p := make([]byte, 1)
+	p := &bytes.Buffer{}
 
 	// First field is the frame end (FEND)
-	p = append(p, 0xc0)
+	p.Write([]byte{0xc0})
 
 	// Next comes our command field
-	p = append(p, 0x00)
+	p.Write([]byte{0x00})
 
 	// Next comes the destination address
-	p = append(p, destaddr...)
+	p.Write(encodeAX25Address(a.Dest, dmask))
 
-	// Then the source address
-	p = append(p, sourceaddr...)
+	// Then the source address.  This part is a little tricky.
+	// If we are going to use digipeaters (i.e. we have a path), we have to set
+	// the last (least significant) bit of the SSID byte to 0.  If we *don't* have
+	// a path, we set it to 1.
+	mask := smask
+	if len(a.Path) == 0 {
+		// We don't have a path, so we set that last bit to 1
+		mask |= 1
+	}
+	// Now that we have our mask, we can encode our source address
+	p.Write(encodeAX25Address(a.Source, mask))
 
 	// Then our digipeater path
-	for _, v := range a.Path {
-		p = append(p, encodeAX25Address(v)...)
-		p = append(p, byte(','))
+	for i, v := range a.Path {
+		mask = clearSSIDMask
+		// If this is the last station in the path, we also set that least significant
+		// bit to 1.   I'm not totally sure on this part. :/
+		if i == len(a.Path)-1 {
+			mask |= 1
+		}
+		p.Write(encodeAX25Address(v, mask))
 	}
 
 	// Then a control field (0x03 signifies that this is a UI-Frame)
-	p = append(p, 0x03)
+	p.Write([]byte{0x03})
 
 	// Then comes our protocol ID
-	p = append(p, 0xf0)
+	p.Write([]byte{0xf0})
 
 	// Now comes the information field: the actual APRS data
-	p = append(p, a.Body...)
+	p.WriteString(a.Body)
 
 	// Finally, another FEND
-	p = append(p, 0xc0)
+	p.Write([]byte{0xc0})
 
-	return p, nil
+	return p.Bytes(), nil
 
 }
 
-func encodeAX25Address(in APRSAddress) []byte {
+func encodeAX25Address(in APRSAddress, mask byte) []byte {
 	out := make([]byte, 7)
 
+	for i := 0; i < len(out); i++ {
+		out[i] = ' '
+	}
+
 	for i, p := range in.Callsign {
-		out[i] = byte(p)
+		out[i] = byte(p) << 1
 	}
 
-	out[6] = byte(in.SSID)
+	out[6] = mask | (byte(in.SSID) << 1)
 
-	for i, p := range out {
-		out[i] = p << 1
-	}
+	fmt.Printf("OUT: %v\n", out)
+
 	return out
 
+}
+
+// This encodes an AX.25 command packet.  It is differentiated from
+// the response packet function below by the bitmask applied to the SSID bytes.
+func EncodeAX25Command(in APRSData) ([]byte, error) {
+	return CreatePacket(in, clearSSIDMask, setSSIDMask)
+}
+
+func EncodeAX25Response(in APRSData) ([]byte, error) {
+	return CreatePacket(in, setSSIDMask, clearSSIDMask)
 }
