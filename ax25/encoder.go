@@ -3,7 +3,6 @@ package ax25
 import (
 	"bytes"
 	"errors"
-	"fmt"
 )
 
 // A mask of 11100000, merged into the SSID byte with inclusive OR
@@ -75,10 +74,10 @@ func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 		mask = byte(0x70 << 1)
 
 		// If this is the last station in the path, we also set our mask
-		// 0x65.   I'm not totally sure on this part and can't square it
+		// 0x61.   I'm not totally sure on this part and can't square it
 		// with the AX.25 spec but it works, so there.
 		if i == len(a.Path)-1 {
-			mask = byte(0x62)
+			mask = byte(0x61)
 		}
 		p.Write(encodeAX25Address(v, mask))
 	}
@@ -111,8 +110,6 @@ func encodeAX25Address(in APRSAddress, mask byte) []byte {
 	}
 
 	out[6] = mask | (byte(in.SSID) << 1)
-
-	fmt.Printf("OUT: %v\n", out)
 
 	return out
 

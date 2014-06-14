@@ -1,14 +1,12 @@
 package main
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/tarm/goserial"
 	"log"
-	//	"os"
-	//	"os/signal"
-	// "github.com/chrissnell/go-base91"
 )
 
 func main() {
@@ -34,27 +32,25 @@ func main() {
 	}
 
 	path1 := ax25.APRSAddress{
-		Callsign: "WIDE2",
-		SSID:     2,
+		Callsign: "WIDE1",
+		SSID:     1,
 	}
 
-	//path2 := ax25.APRSAddress{
-	//	Callsign: "WIDE2",
-	//	SSID:     1,
-	//}
+	path2 := ax25.APRSAddress{
+		Callsign: "WIDE2",
+		SSID:     1,
+	}
 
 	a := ax25.APRSData{
 		Source: psource,
 		Dest:   pdest,
-		Path:   []ax25.APRSAddress{path1},
+		Path:   []ax25.APRSAddress{path1, path2},
 		Body:   "!4715.68N/12228.20W-GoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
 	if err != nil {
 		log.Fatalf("Unable to create packet: %v", err)
-	} else {
-		fmt.Printf("--> %v\n", string(packet))
 	}
 
 	s.Write(packet)
@@ -63,5 +59,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error closing port: %v", err)
 	}
+
+	// Let's decode our own packet to make sure tht it's bueno
+	buf := bytes.NewReader(packet)
+	d := ax25.NewDecoder(buf)
+	msg, err := d.Next()
+	fmt.Printf("%+v\n", msg)
 
 }
