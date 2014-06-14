@@ -18,6 +18,16 @@ var setSSIDMask = byte(0x70 << 1)
 // destination address
 var clearSSIDMask = byte(0x30 << 1)
 
+// This encodes an AX.25 command packet.  It is differentiated from
+// the response packet function below by the bitmask applied to the SSID bytes.
+func EncodeAX25Command(in APRSData) ([]byte, error) {
+	return CreatePacket(in, clearSSIDMask, setSSIDMask)
+}
+
+func EncodeAX25Response(in APRSData) ([]byte, error) {
+	return CreatePacket(in, setSSIDMask, clearSSIDMask)
+}
+
 func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 
 	if len(a.Source.Callsign) < 4 {
@@ -38,10 +48,7 @@ func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 
 	p := &bytes.Buffer{}
 
-	// First field is the frame end (FEND)
-	p.Write([]byte{0xc0})
-
-	// Next comes our command field
+	// First comes our command field
 	p.Write([]byte{0x00})
 
 	// Next comes the destination address
@@ -61,11 +68,14 @@ func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 
 	// Then our digipeater path
 	for i, v := range a.Path {
-		mask = clearSSIDMask
-		// If this is the last station in the path, we also set that least significant
-		// bit to 1.   I'm not totally sure on this part. :/
+
+		mask = byte(0x70 << 1)
+
+		// If this is the last station in the path, we also set our mask
+		// 0x65.   I'm not totally sure on this part and can't square it
+		// with the AX.25 spec but it works, so there.
 		if i == len(a.Path)-1 {
-			mask |= 1
+			mask = byte(0x65)
 		}
 		p.Write(encodeAX25Address(v, mask))
 	}
@@ -90,7 +100,7 @@ func encodeAX25Address(in APRSAddress, mask byte) []byte {
 	out := make([]byte, 7)
 
 	for i := 0; i < len(out); i++ {
-		out[i] = ' '
+		out[i] = 0x40
 	}
 
 	for i, p := range in.Callsign {
@@ -103,14 +113,4 @@ func encodeAX25Address(in APRSAddress, mask byte) []byte {
 
 	return out
 
-}
-
-// This encodes an AX.25 command packet.  It is differentiated from
-// the response packet function below by the bitmask applied to the SSID bytes.
-func EncodeAX25Command(in APRSData) ([]byte, error) {
-	return CreatePacket(in, clearSSIDMask, setSSIDMask)
-}
-
-func EncodeAX25Response(in APRSData) ([]byte, error) {
-	return CreatePacket(in, setSSIDMask, clearSSIDMask)
 }
