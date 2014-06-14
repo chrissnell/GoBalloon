@@ -30,6 +30,7 @@ func main() {
 
 	pdest := ax25.APRSAddress{
 		Callsign: "APZ001",
+		SSID:     0,
 	}
 
 	ppath := ax25.APRSAddress{
@@ -41,7 +42,7 @@ func main() {
 		Source: psource,
 		Dest:   pdest,
 		Path:   []ax25.APRSAddress{ppath},
-		Body:   ":`283lA+j/`\"4g}http://nw5w.com_",
+		Body:   "!4715.68N/12228.20W-GoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
