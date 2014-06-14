@@ -78,7 +78,7 @@ func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 		// 0x65.   I'm not totally sure on this part and can't square it
 		// with the AX.25 spec but it works, so there.
 		if i == len(a.Path)-1 {
-			mask = byte(0x65)
+			mask = byte(0x62)
 		}
 		p.Write(encodeAX25Address(v, mask))
 	}
