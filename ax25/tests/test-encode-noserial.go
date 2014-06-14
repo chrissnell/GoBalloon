@@ -12,15 +12,24 @@ import (
 func main() {
 
 	psource := ax25.APRSAddress{
-		Callsign: "NW5W",
-		SSID:     7,
+		Callsign: "VA7MPG",
+		SSID:     14,
 	}
 
 	pdest := ax25.APRSAddress{
-		Callsign: "APZ001",
+		Callsign: "T7QUUP",
+		SSID:     0,
 	}
 
-	ppath := ax25.APRSAddress{
+	path1 := ax25.APRSAddress{
+		Callsign: "W7PFR",
+		SSID:     1,
+	}
+	path2 := ax25.APRSAddress{
+		Callsign: "WIDE1",
+		SSID:     0,
+	}
+	path3 := ax25.APRSAddress{
 		Callsign: "WIDE2",
 		SSID:     2,
 	}
@@ -28,8 +37,8 @@ func main() {
 	a := ax25.APRSData{
 		Source: psource,
 		Dest:   pdest,
-		Path:   []ax25.APRSAddress{ppath},
-		Body:   ":`283lA+j/`\"4g}http://nw5w.com_",
+		Path:   []ax25.APRSAddress{path1, path2, path3},
+		Body:   "`2;G rhk/]\"51}",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
