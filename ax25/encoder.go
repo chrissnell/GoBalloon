@@ -48,7 +48,10 @@ func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
 
 	p := &bytes.Buffer{}
 
-	// First comes our command field
+	// First, we send a Frame End (FEND)
+	p.Write([]byte{0xc0})
+
+	// Next comes our command field
 	p.Write([]byte{0x00})
 
 	// Next comes the destination address
