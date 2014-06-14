@@ -33,15 +33,20 @@ func main() {
 		SSID:     0,
 	}
 
-	ppath := ax25.APRSAddress{
+	path1 := ax25.APRSAddress{
 		Callsign: "WIDE2",
 		SSID:     2,
 	}
 
+	//path2 := ax25.APRSAddress{
+	//	Callsign: "WIDE2",
+	//	SSID:     1,
+	//}
+
 	a := ax25.APRSData{
 		Source: psource,
 		Dest:   pdest,
-		Path:   []ax25.APRSAddress{ppath},
+		Path:   []ax25.APRSAddress{path1},
 		Body:   "!4715.68N/12228.20W-GoBalloon Test http://nw5w.com",
 	}
 
