@@ -7,21 +7,14 @@ import (
 	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/tarm/goserial"
 	"log"
+	"net"
 )
 
 func main() {
 
-	port := flag.String("port", "/dev/ttyUSB0", "Serial port device (defaults to /dev/ttyUSB0)")
+	remote := flag.String("remote", "10.50.0.25:6700", "Remote TNC server")
 	flag.Parse()
-
-	c := &serial.Config{Name: *port, Baud: 4800}
-
-	s, err := serial.OpenPort(c)
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	psource := ax25.APRSAddress{
 		Callsign: "NW5W",
@@ -58,7 +51,6 @@ func main() {
 		Dest:   pdest,
 		Path:   path,
 		Body:   body,
-		//Body:   "!4715.68N/12228.20WOGoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
@@ -66,11 +58,21 @@ func main() {
 		log.Fatalf("Unable to create packet: %v", err)
 	}
 
-	s.Write(packet)
-
-	err = s.Close()
+	conn, err := net.Dial("tcp", *remote)
 	if err != nil {
-		log.Fatalf("Error closing port: %v", err)
+		log.Fatalf("Could not connect to %v.  Error: %v", *remote, err)
+	}
+
+	bw, err := conn.Write(packet)
+	if err != nil {
+		log.Fatalf("Could not write to remote.  Error: %v", err)
+	} else {
+		log.Printf("Wrote %v bytes to %v", bw, conn.RemoteAddr())
+	}
+
+	err = conn.Close()
+	if err != nil {
+		log.Fatalf("Error closing connection: %v", err)
 	}
 
 	// Let's decode our own packet to make sure tht it's bueno
