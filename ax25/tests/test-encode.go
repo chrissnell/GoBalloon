@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
+	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/tarm/goserial"
 	"log"
 )
@@ -43,11 +45,20 @@ func main() {
 		SSID:     1,
 	})
 
+	point := geospatial.NewPoint()
+	point.Lat = 47.262347
+	point.Lon = -122.46988
+	point.Alt = 2500
+
+	position := aprs.CreateCompressedPosition(point, '/', 'O')
+	body := fmt.Sprint(position, "GoBalloon Test http://nw5w.com")
+
 	a := ax25.APRSData{
 		Source: psource,
 		Dest:   pdest,
 		Path:   path,
-		Body:   "!4715.68N/12228.20WOGoBalloon Test http://nw5w.com",
+		Body:   body,
+		//Body:   "!4715.68N/12228.20WOGoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
