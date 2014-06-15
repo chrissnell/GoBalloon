@@ -31,21 +31,23 @@ func main() {
 		SSID:     0,
 	}
 
-	path1 := ax25.APRSAddress{
-		Callsign: "WIDE2",
-		SSID:     2,
-	}
+	var path []ax25.APRSAddress
 
-	// path2 := ax25.APRSAddress{
-	// 	Callsign: "WIDE2",
-	// 	SSID:     1,
-	// }
+	path = append(path, ax25.APRSAddress{
+		Callsign: "WIDE1",
+		SSID:     1,
+	})
+
+	path = append(path, ax25.APRSAddress{
+		Callsign: "WIDE2",
+		SSID:     1,
+	})
 
 	a := ax25.APRSData{
 		Source: psource,
 		Dest:   pdest,
-		Path:   []ax25.APRSAddress{path1},
-		Body:   "!4715.68N/12228.20W-GoBalloon Test http://nw5w.com",
+		Path:   path,
+		Body:   "!4715.68N/12228.20WOGoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
