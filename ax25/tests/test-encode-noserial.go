@@ -4,9 +4,6 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"log"
-	//	"os"
-	//	"os/signal"
-	// "github.com/chrissnell/go-base91"
 )
 
 func main() {

@@ -5,9 +5,6 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"log"
-	//	"os"
-	//	"os/signal"
-	// "github.com/chrissnell/go-base91"
 )
 
 func main() {
@@ -53,7 +50,6 @@ func main() {
 		fmt.Printf("%4d \t%#x \t%v \t%v\t%08b\n", k, v, string(v), string(rs), v)
 	}
 
-	//var buf bytes.Buffer
 	buf := bytes.NewReader(packet)
 	d := ax25.NewDecoder(buf)
 
