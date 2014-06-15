@@ -13,7 +13,7 @@ func CreateCompressedPosition(p *geospatial.Point, symTable, symCode rune) strin
 	// The rune '!' indicates a real-time compressed position report
 	buffer.WriteRune('!')
 
-	// First byte in our compress position report is the symbol table selector
+	// Next byte is the symbol table selector
 	buffer.WriteRune(symTable)
 
 	// Next four bytes is the decimal latitude, compressed with funky Base91
