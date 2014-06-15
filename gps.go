@@ -16,12 +16,6 @@ import (
 	"time"
 )
 
-type Point struct {
-	lat float64
-	lon float64
-	alt float64
-}
-
 type Session struct {
 	socket net.Conn
 	reader *bufio.Reader
@@ -107,9 +101,9 @@ func processGPSDSentences(msg chan string) {
 					break
 				}
 				fmt.Println("--- TPV sentence received")
-				currentPosition.lon = tpv.Lon
-				currentPosition.lat = tpv.Lat
-				currentPosition.alt = tpv.Alt
+				currentPosition.Lon = tpv.Lon
+				currentPosition.Lat = tpv.Lat
+				currentPosition.Alt = tpv.Alt
 				fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
 			}
 		}
