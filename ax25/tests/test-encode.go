@@ -58,7 +58,6 @@ func main() {
 		Dest:   pdest,
 		Path:   path,
 		Body:   body,
-		//Body:   "!4715.68N/12228.20WOGoBalloon Test http://nw5w.com",
 	}
 
 	packet, err := ax25.EncodeAX25Command(a)
