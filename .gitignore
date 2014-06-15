@@ -1,3 +1,7 @@
 GoBalloon
 
 ax25/tests/ssid-test.go
+
+aprs/test/compressed-position-test
+
+geospatial/test/geo-test
