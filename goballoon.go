@@ -7,6 +7,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/chrissnell/GoBalloon/geospatial"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,7 +15,7 @@ import (
 
 var (
 	timeToDie       = make(chan bool, 1)
-	currentPosition Point
+	currentPosition geospatial.Point
 )
 
 func main() {
