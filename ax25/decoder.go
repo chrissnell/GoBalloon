@@ -1,5 +1,5 @@
 // GoBalloon
-// decoder.go - AX.25 decoder
+// decoder.go - AX.25/KISS decoder
 //
 // This code borrows heavily from Dustin Sallings's go-aprs library.
 // https://github.com/dustin/go-aprs
