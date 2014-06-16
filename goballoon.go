@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -20,16 +21,22 @@ var (
 	currentPosition geospatial.Point
 	remotegps       *string
 	remotetnc       *string
+	localtncport    *string
 )
 
 func main() {
 
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
-	remotetnc = flag.String("remote", "10.50.0.25:6700", "Remote TNC server")
+	remotetnc = flag.String("remotetnc", "", "Remote TNC server")
+	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 
 	flag.Parse()
 
 	fmt.Println("Starting up.")
+
+	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
+		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
+	}
 
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
