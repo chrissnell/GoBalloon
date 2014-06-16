@@ -1,3 +1,11 @@
+// GoBalloon
+// encoder.go - AX.25/KISS encoder
+//
+// This code borrows heavily from Dustin Sallings's go-aprs library.
+// https://github.com/dustin/go-aprs
+// I've modified the code to play nicely with hardware TNCs using KISS and
+// added comments that explain the structure of the AX.25/KISS packets
+
 package ax25
 
 import (
