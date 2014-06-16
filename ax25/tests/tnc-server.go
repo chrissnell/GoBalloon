@@ -13,6 +13,14 @@ func main() {
 	port := flag.String("port", "/dev/ttyUSB0", "Serial port device (defaults to /dev/ttyUSB0)")
 	flag.Parse()
 
+	// Spin off a goroutine to watch for a SIGINT and die if we get one
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, os.Interrupt)
+	go func() {
+		<-sig
+		os.Exit(1)
+	}()
+
 	sc := &serial.Config{Name: *port, Baud: 4800}
 
 	s, err := serial.OpenPort(sc)
