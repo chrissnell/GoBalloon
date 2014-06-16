@@ -54,7 +54,7 @@ func readFromGPSD(msg chan string) {
 		session = new(Session)
 		fmt.Println("--- Created new session")
 		var err error
-		session.socket, err = net.Dial("tcp", "127.0.0.1:2947")
+		session.socket, err = net.Dial("tcp", *remotegps)
 		if err != nil {
 			fmt.Printf("--- %v\n", err)
 			fmt.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
