@@ -1,3 +1,9 @@
+// GoBalloon
+// tnc-client.go - An APRS encoder and sender, intended to talk to
+//                 tnc-server, serial/TCP bridge for connecting to an AX.25 TNC device.
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (

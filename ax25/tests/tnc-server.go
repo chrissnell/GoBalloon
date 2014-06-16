@@ -1,3 +1,8 @@
+// GoBalloon
+// tnc-server.go - A serial/TCP bridge for connecting to an AX.25 TNC device
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (

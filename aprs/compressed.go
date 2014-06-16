@@ -1,3 +1,8 @@
+// GoBalloon
+// compressed.go - Functions for building compressed position beacons for APRS
+//
+// (c) 2014, Christopher Snell
+
 package aprs
 
 import (

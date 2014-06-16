@@ -1,3 +1,8 @@
+// GoBalloon
+// test-encode.go - APRS packet encoder + sender for testing purposes
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (

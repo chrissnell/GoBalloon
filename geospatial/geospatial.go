@@ -1,3 +1,8 @@
+// GoBalloon
+// geospatial.go - Functions for balloon-related geospatial calculations
+//
+// (c) 2014, Christopher Snell
+
 package geospatial
 
 type Point struct {

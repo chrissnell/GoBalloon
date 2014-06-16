@@ -1,3 +1,8 @@
+// GoBalloon
+// test-decode.go - APRS packet receiver + decoder for testing purposes
+//
+// (c) 2014, Christopher Snell
+
 package main
 
 import (
