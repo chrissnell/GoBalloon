@@ -24,23 +24,23 @@ var (
 func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 	fmt.Println("--- sendAPRSBeacon start")
 
-	var lowpath []ax25.APRSAddress
-	var highpath []ax25.APRSAddress
 	var a ax25.APRSData
 
-	lowpath = append(lowpath, ax25.APRSAddress{
-		Callsign: "WIDE1",
-		SSID:     1,
-	})
-	lowpath = append(lowpath, ax25.APRSAddress{
-		Callsign: "WIDE2",
-		SSID:     1,
-	})
+	lowpath := []ax25.APRSAddress{
+		{
+			Callsign: "WIDE1",
+			SSID:     1,
+		},
+		{
+			Callsign: "WIDE2",
+			SSID:     1,
+		},
+	}
 
-	highpath = append(highpath, ax25.APRSAddress{
+	highpath := []ax25.APRSAddress{{
 		Callsign: "WIDE2",
 		SSID:     1,
-	})
+	}}
 
 	// This loop runs until a message on thetimeToDie channel is received
 	for {
