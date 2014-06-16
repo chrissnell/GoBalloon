@@ -24,7 +24,23 @@ var (
 func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 	fmt.Println("--- sendAPRSBeacon start")
 
-	var path []ax25.APRSAddress
+	var lowpath []ax25.APRSAddress
+	var highpath []ax25.APRSAddress
+	var a ax25.APRSData
+
+	lowpath = append(lowpath, ax25.APRSAddress{
+		Callsign: "WIDE1",
+		SSID:     1,
+	})
+	lowpath = append(lowpath, ax25.APRSAddress{
+		Callsign: "WIDE2",
+		SSID:     1,
+	})
+
+	highpath = append(highpath, ax25.APRSAddress{
+		Callsign: "WIDE2",
+		SSID:     1,
+	})
 
 	// This loop runs until a message on thetimeToDie channel is received
 	for {
@@ -39,28 +55,6 @@ func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 
 			// Only transmit packets when the GPS has satellite lock
 			if currentPosition.Lat != 0 || currentPosition.Lon != 0 {
-
-				// We use a much smaller path when flying above 5000' MSL
-				if currentPosition.Alt > 5000 {
-
-					// This path gives one retransmit from a mountaintop digipeater
-					path = append(path, ax25.APRSAddress{
-						Callsign: "WIDE2",
-						SSID:     1,
-					})
-				} else {
-
-					// This path gives up to one retransmit from a fill-in digi and one from a mountaintop digi
-					path = append(path, ax25.APRSAddress{
-						Callsign: "WIDE1",
-						SSID:     1,
-					})
-
-					path = append(path, ax25.APRSAddress{
-						Callsign: "WIDE2",
-						SSID:     1,
-					})
-				}
 
 				// This is how we handle incoming APRS messages.  Not yet implemented
 				//var amsg = fmt.Sprintf("hi lat=%v lon=%v alt=%v", currentPosition.Lat, currentPosition.Lon, currentPosition.Alt)
@@ -78,12 +72,25 @@ func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 				// Append our comment to the position report
 				body := fmt.Sprint(position, "GoBalloon Test http://nw5w.com")
 
-				// Form an APRS data packet
-				a := ax25.APRSData{
-					Source: aprssource,
-					Dest:   aprsdest,
-					Path:   path,
-					Body:   body,
+				// We use a much smaller path when flying above 5000' MSL
+				if currentPosition.Alt > 5000 {
+
+					// Form an APRS data packet
+					a = ax25.APRSData{
+						Source: aprssource,
+						Dest:   aprsdest,
+						Path:   highpath,
+						Body:   body,
+					}
+				} else {
+
+					// Form an APRS data packet
+					a = ax25.APRSData{
+						Source: aprssource,
+						Dest:   aprsdest,
+						Path:   lowpath,
+						Body:   body,
+					}
 				}
 
 				packet, err := ax25.EncodeAX25Command(a)
