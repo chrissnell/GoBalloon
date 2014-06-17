@@ -32,17 +32,23 @@ func main() {
 		SSID:     0,
 	}
 
-	var path []ax25.APRSAddress
+	path := []ax25.APRSAddress{
+		{
+			Callsign: "WIDE1",
+			SSID:     1,
+		},
+		{
+			Callsign: "WIDE2",
+			SSID:     1,
+		},
+	}
 
-	path = append(path, ax25.APRSAddress{
-		Callsign: "WIDE1",
-		SSID:     1,
-	})
-
-	path = append(path, ax25.APRSAddress{
-		Callsign: "WIDE2",
-		SSID:     1,
-	})
+	// path := []ax25.APRSAddress{
+	// 	{
+	// 		Callsign: "K9JEB",
+	// 		SSID:     2,
+	// 	},
+	// }
 
 	point := geospatial.NewPoint()
 	point.Lat = 47.262347
