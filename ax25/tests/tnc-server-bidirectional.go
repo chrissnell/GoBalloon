@@ -15,65 +15,75 @@ import (
 	"os/signal"
 )
 
-func serialWriterNetReader(netconn net.Conn, serialconn io.ReadWriteCloser, serialWriterDone chan bool) {
+func serialWriter(netconn net.Conn, serialconn io.ReadWriteCloser, serialWriterDone chan bool) {
 	b, err := io.Copy(serialconn, netconn)
 	if err != nil {
-		log.Printf("Error copying from network to serial: %v", err)
-		log.Printf("netToSerial connection closing.  %v bytes written.", b)
+		log.Printf("Error copying from network->serial: %v", err)
+		log.Printf("serialWriter copy closing.  %v bytes written.", b)
+		serialWriterDone <- true
 		return
 	}
 	netconn.Close()
 	serialWriterDone <- true
-	log.Printf("netToSerial connection closing.  %v bytes written.", b)
+	log.Printf("serialWriter connection closing.  %v bytes written.", b)
 	return
 }
 
-func netWriterSerialReader(netconn net.Conn, serialconn io.ReadWriteCloser, serialReaderDone chan bool) {
+func serialReader(netconn net.Conn, serialconn io.ReadWriteCloser, serialReaderDone chan bool) {
 	b, err := io.Copy(netconn, serialconn)
 	if err != nil {
-		log.Printf("Error copying from serial to network: %v", err)
+		log.Printf("Error copying from serial->network: %v", err)
+		log.Printf("serialReader copy closing.  %v bytes written.", b)
+		serialReaderDone <- true
 		return
 	}
-	netconn.Close()
 	serialReaderDone <- true
-	log.Printf("serialToNet connection closing.  %v bytes written.", b)
+	log.Printf("serialReader connection closing.  %v bytes written.", b)
 	return
 }
 
-func waitForSerialWriter(netToSerialListener net.Listener, s io.ReadWriteCloser) {
+func waitForSerialWriter(serialWriterListener net.Listener, s io.ReadWriteCloser) {
+
+	log.Println("Starting serialWriterListener...")
 
 	for {
 		serialWriterDone := make(chan bool, 1)
 
 		// Wait for a connection.
-		conn, err := netToSerialListener.Accept()
+		conn, err := serialWriterListener.Accept()
 		log.Printf("Answered incoming Writer connection from %v\n", conn.RemoteAddr())
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		go serialWriterNetReader(conn, s, serialWriterDone)
+		go serialWriter(conn, s, serialWriterDone)
 
 		<-serialWriterDone
+		log.Println("Serial Writer done.")
 	}
 
 }
 
-func waitForNetWriter(serialToNetListener net.Listener, s io.ReadWriteCloser) {
+func waitForSerialReader(serialReaderListener net.Listener, s io.ReadWriteCloser) {
+
+	log.Println("Starting serialReaderListener...")
 
 	for {
 		serialReaderDone := make(chan bool, 1)
 
 		// Wait for a connection.
-		conn, err := serialToNetListener.Accept()
+		conn, err := serialReaderListener.Accept()
 		log.Printf("Answered incoming Reader connection from %v\n", conn.RemoteAddr())
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		go netWriterSerialReader(conn, s, serialReaderDone)
+		go serialReader(conn, s, serialReaderDone)
 
 		<-serialReaderDone
+		conn.Close()
+		log.Println("Serial Reader done.")
+
 	}
 
 }
@@ -99,20 +109,20 @@ func main() {
 	}
 	defer s.Close()
 
-	netToSerialListener, err := net.Listen("tcp", ":6700")
+	serialWriterListener, err := net.Listen("tcp", ":6700")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer netToSerialListener.Close()
+	defer serialWriterListener.Close()
 
-	serialToNetListener, err := net.Listen("tcp", ":6701")
+	serialReaderListener, err := net.Listen("tcp", ":6701")
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer serialToNetListener.Close()
+	defer serialReaderListener.Close()
 
-	go waitForSerialWriter(netToSerialListener, s)
-	go waitForNetWriter(serialToNetListener, s)
+	go waitForSerialWriter(serialWriterListener, s)
+	go waitForSerialReader(serialReaderListener, s)
 
 	<-sig
 	log.Println("SIGINT received.  Shutting down...")
