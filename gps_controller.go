@@ -65,19 +65,26 @@ func readFromGPSD(msg chan string) {
 		_, err = session.socket.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
 		if err != nil {
 			log.Printf("--- ERROR: Could not send WATCH command to gpsd: %v", err)
+			continue
 		}
 
 		session.reader = bufio.NewReader(session.socket)
 
+		lines := 0
+
 		for {
 			line, err := session.reader.ReadString('\n')
+			lines += 1
+			if lines > 100 {
+				fmt.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
+				break
+			}
 			if err != nil {
 				fmt.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
 				time.Sleep(1000 * time.Millisecond)
 				break
-			} else {
-				msg <- line
 			}
+			msg <- line
 		}
 	}
 }
