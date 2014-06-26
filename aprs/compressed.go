@@ -1,5 +1,5 @@
 // GoBalloon
-// compressed.go - Functions for building compressed position beacons for APRS
+// compressed.go - Functions for created and decoding compressed APRS position reports
 //
 // (c) 2014, Christopher Snell
 

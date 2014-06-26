@@ -19,7 +19,7 @@ func CameraRun() {
 			fmt.Println("--- Break")
 			break
 		default:
-			fmt.Println("--- Taking a photo")
+			//fmt.Println("--- Taking a photo")
 			// pin := gpio.NewDigitalPin(12, "w")
 			// pin.DigitalWrite("1")
 			timer := time.NewTimer(time.Second * 1)

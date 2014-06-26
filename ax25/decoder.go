@@ -11,7 +11,6 @@ package ax25
 import (
 	"bufio"
 	"errors"
-	_ "fmt"
 	"io"
 	"strings"
 )

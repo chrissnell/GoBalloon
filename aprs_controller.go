@@ -125,19 +125,20 @@ func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 
 					conn, err := net.Dial("tcp", *remotetnc)
 					if err != nil {
-						log.Fatalf("Could not connect to %v.  Error: %v", *remotetnc, err)
+						log.Printf("Could not connect to %v.  Error: %v", *remotetnc, err)
+						break
 					}
 
 					bw, err := conn.Write(packet)
 					if err != nil {
-						log.Fatalf("Could not write to remote.  Error: %v", err)
+						log.Printf("Could not write to remote.  Error: %v", err)
 					} else {
 						log.Printf("Wrote %v bytes to %v", bw, conn.RemoteAddr())
 					}
 
 					err = conn.Close()
 					if err != nil {
-						log.Fatalf("Error closing connection: %v", err)
+						log.Printf("Error closing connection: %v", err)
 					}
 				}
 
