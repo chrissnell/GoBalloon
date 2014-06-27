@@ -9,62 +9,70 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 )
 
 type TelemetryReport struct {
-	A1 uint8
-	A2 uint8
-	A3 uint8
-	A4 uint8
-	A5 uint8
-	D1 byte
+	Analog  map[string]uint8
+	Digital byte
 }
 
 func CreateTelemetryReport(r *TelemetryReport) string {
 	var buffer bytes.Buffer
 
-	var values []string
+	tk := make([]string, len(r.Analog))
+
+	i := 0
+	for _, v := range r.Analog {
+		if i < 5 {
+			tk[i] = fmt.Sprintf("%03v", int(v))
+		}
+		i++
+	}
+	sort.Strings(tk)
 
 	// First byte in our telemetry report is the data type indicator.
 	// The rune 'T' indicates a standard APRS telemetry report with
 	// five analog values and one digital value
 	buffer.WriteRune('T')
 
-	// Next, we assemble the telemetry values into an slice of strings
-	values = append(values, strconv.FormatUint(uint64(r.A1), 10), strconv.FormatUint(uint64(r.A2), 10),
-		strconv.FormatUint(uint64(r.A3), 10), strconv.FormatUint(uint64(r.A4), 10),
-		strconv.FormatUint(uint64(r.A5), 10), fmt.Sprintf("%08b", r.D1))
+	buffer.WriteString(strings.Join(tk, ","))
 
-	buffer.WriteString(strings.Join(values, ","))
+	buffer.WriteString(fmt.Sprintf(",%08b", r.Digital))
 
 	return buffer.String()
 }
 
-func ParseTelemetryReport(s string) (r *TelemetryReport, err error) {
+func ParseTelemetryReport(s string) (*TelemetryReport, error) {
+	var err error
 	var errMissingTelemElements = errors.New("Telemetry message has incorrect number of elements")
 	var telems []string
+
+	r := &TelemetryReport{}
+
+	tmap := make(map[string]uint8)
 
 	telems = strings.Split(s[1:], ",")
 	if len(telems) != 6 {
 		err = errMissingTelemElements
-		return
+		return nil, err
 	}
 
-	a1, err := strconv.Atoi(telems[0])
-	a2, err := strconv.Atoi(telems[1])
-	a3, err := strconv.Atoi(telems[2])
-	a4, err := strconv.Atoi(telems[3])
-	a5, err := strconv.Atoi(telems[4])
-	d1, err := strconv.ParseInt(telems[5], 2, 64)
+	for i := 0; i < 5; i++ {
+		ti, err := strconv.Atoi(telems[i])
+		if err != nil {
+			err = errors.New("Unable to convert telemetry value to unsigned integer (must be a whole number)")
+			return nil, err
+		}
+		tmap[strconv.Itoa(i)] = uint8(ti)
+	}
 
-	r = &TelemetryReport{A1: uint8(a1),
-		A2: uint8(a2),
-		A3: uint8(a3),
-		A4: uint8(a4),
-		A5: uint8(a5),
-		D1: byte(d1)}
+	r.Analog = tmap
 
-	return
+	di, err := strconv.Atoi(telems[5])
+	r.Digital = byte(di)
+
+	return r, err
 }

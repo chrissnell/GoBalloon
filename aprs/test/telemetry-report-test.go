@@ -7,7 +7,10 @@ import (
 )
 
 func main() {
-	r := aprs.TelemetryReport{A1: 10, A2: 20, A3: 30, A4: 40, A5: 50, D1: 77}
+	r := aprs.TelemetryReport{
+		Analog:  map[string]uint8{"A": 77, "B": 10, "C": 20, "D": 30, "E": 40},
+		Digital: 77,
+	}
 	tr := aprs.CreateTelemetryReport(&r)
 
 	fmt.Printf("Telemetry report: %v\n", tr)
