@@ -7,6 +7,8 @@ package aprs
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"math"
 )
 
@@ -43,17 +45,39 @@ func LonPrecompress(l float64) (p float64) {
 	return p
 }
 
-func EncodeBase91Position(l int) (b91 []byte) {
-	b91 = make([]byte, 4)
+func EncodeBase91Position(l int) []byte {
+	b91 := make([]byte, 4)
 	p1_div := int(l / (91 * 91 * 91))
 	p1_rem := l % (91 * 91 * 91)
 	p2_div := int(p1_rem / (91 * 91))
 	p2_rem := p1_rem % (91 * 91)
 	p3_div := int(p2_rem / 91)
-	p3_rem := p2_rem % (91)
+	p3_rem := p2_rem % 91
 	b91[0] = byte(p1_div) + 33
 	b91[1] = byte(p2_div) + 33
 	b91[2] = byte(p3_div) + 33
 	b91[3] = byte(p3_rem) + 33
 	return b91
+}
+
+func EncodeBase91Telemetry(l uint16) ([]byte, error) {
+
+	// l, err := strconv.Atoi(t)
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	if l > 8280 {
+		err := errors.New("Cannot encode telemetry value larger than 8280")
+		return nil, err
+	}
+
+	fmt.Printf("About to encode: %v\n", l)
+
+	b91 := make([]byte, 2)
+	p1_div := int(l / 91)
+	p1_rem := l % 91
+	b91[0] = byte(p1_div) + 33
+	b91[1] = byte(p1_rem) + 33
+	return b91, nil
 }
