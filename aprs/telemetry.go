@@ -74,11 +74,20 @@ func CreateCompressedTelemetryReport(seq uint16, r *CompressedTelemetryReport) (
 		return "", err
 	}
 
+	if uint16(r.Digital) > 255 {
+		err := errors.New("Digital value cannot exceed 8 bits (integer 255)")
+		return "", err
+	}
+
+	D1e, err := EncodeBase91Telemetry(uint16(r.Digital))
+
 	buffer.Write(A1e)
 	buffer.Write(A2e)
 	buffer.Write(A3e)
 	buffer.Write(A4e)
 	buffer.Write(A5e)
+	buffer.Write(D1e)
+	buffer.WriteRune('|')
 
 	return buffer.String(), nil
 
@@ -113,3 +122,7 @@ func ParseTelemetryReport(s string) (*StdTelemetryReport, error) {
 
 	return r, err
 }
+
+//func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, error) {
+//
+//}
