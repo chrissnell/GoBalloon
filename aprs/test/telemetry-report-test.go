@@ -7,13 +7,32 @@ import (
 )
 
 func main() {
-	r := aprs.TelemetryReport{
-		Analog:  map[string]uint8{"A": 77, "B": 10, "C": 20, "D": 30, "E": 40},
+	s := aprs.StdTelemetryReport{
+		A1:      206,
+		A2:      100,
+		A3:      20,
+		A4:      36,
+		A5:      40,
 		Digital: 77,
 	}
-	tr := aprs.CreateTelemetryReport(&r)
+
+	c := aprs.CompressedTelemetryReport{
+		A1:      7740,
+		A2:      105,
+		A3:      20,
+		A4:      3006,
+		A5:      403,
+		Digital: 77,
+	}
+
+	tr := aprs.CreateTelemetryReport(&s)
+	ctr, err := aprs.CreateCompressedTelemetryReport(901, &c)
+	if err != nil {
+		log.Fatalln("Error:", err)
+	}
 
 	fmt.Printf("Telemetry report: %v\n", tr)
+	fmt.Printf("Compressed Telemetry report: %v\n", ctr)
 
 	p, err := aprs.ParseTelemetryReport(tr)
 	if err != nil {
