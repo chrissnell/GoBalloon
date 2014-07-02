@@ -30,7 +30,7 @@ func main() {
 	}
 	fmt.Printf("Uncompressed position: %v\n", u_pos)
 
-	upos_dec, sym_t, sym_c, err := aprs.DecodeUncompressedPositionReport(u_pos)
+	upos_dec, sym_t, sym_c, err := aprs.DecodeUncompressedPositionReportWithoutTimestamp(u_pos)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {

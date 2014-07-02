@@ -116,7 +116,7 @@ func DecodeCompressedPositionReport(c string) (*geospatial.Point, rune, rune, er
 	return p, symTable, symCode, nil
 }
 
-func DecodeUncompressedPositionReport(c string) (*geospatial.Point, rune, rune, error) {
+func DecodeUncompressedPositionReportWithoutTimestamp(c string) (*geospatial.Point, rune, rune, error) {
 	// Example:   !4903.50N/07201.75W-
 
 	var err error
