@@ -14,38 +14,40 @@ import (
 )
 
 type StdTelemetryReport struct {
-	A1      uint8
-	A2      uint8
-	A3      uint8
-	A4      uint8
-	A5      uint8
-	Digital byte
+	Sequence uint16
+	A1       uint8
+	A2       uint8
+	A3       uint8
+	A4       uint8
+	A5       uint8
+	Digital  byte
 }
 
 type CompressedTelemetryReport struct {
-	A1      uint16
-	A2      uint16
-	A3      uint16
-	A4      uint16
-	A5      uint16
-	Digital byte
+	Sequence uint16
+	A1       uint16
+	A2       uint16
+	A3       uint16
+	A4       uint16
+	A5       uint16
+	Digital  byte
 }
 
-func CreateTelemetryReport(r *StdTelemetryReport) string {
+func CreateUncompressedTelemetryReport(r *StdTelemetryReport) string {
 	// First byte in our telemetry report is the data type indicator.
 	// The rune 'T' indicates a standard APRS telemetry report with
 	// five analog values and one digital value
-	return fmt.Sprintf("T%03v,%03v,%03v,%03v,%03v,%08b", r.A1, r.A2, r.A3, r.A4, r.A5, r.Digital)
+	return fmt.Sprintf("T%03v,%03v,%03v,%03v,%03v,%03v,%08b", r.Sequence, r.A1, r.A2, r.A3, r.A4, r.A5, r.Digital)
 }
 
-func CreateCompressedTelemetryReport(seq uint16, r *CompressedTelemetryReport) (string, error) {
+func CreateCompressedTelemetryReport(r *CompressedTelemetryReport) (string, error) {
 	var buffer bytes.Buffer
 
 	buffer.WriteRune('|')
 
-	seq = (seq + 1) & 0x1FFF
+	r.Sequence = (r.Sequence + 1) & 0x1FFF
 
-	sv, err := EncodeBase91Telemetry(seq)
+	sv, err := EncodeBase91Telemetry(r.Sequence)
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +95,7 @@ func CreateCompressedTelemetryReport(seq uint16, r *CompressedTelemetryReport) (
 
 }
 
-func ParseTelemetryReport(s string) (*StdTelemetryReport, error) {
+func ParseUncompressedTelemetryReport(s string) (*StdTelemetryReport, error) {
 	var err error
 	var errMissingTelemElements = errors.New("Telemetry message has incorrect number of elements")
 	var telems []string
@@ -101,7 +103,7 @@ func ParseTelemetryReport(s string) (*StdTelemetryReport, error) {
 	r := &StdTelemetryReport{}
 
 	telems = strings.Split(s[1:], ",")
-	if len(telems) != 6 {
+	if len(telems) != 7 {
 		err = errMissingTelemElements
 		return nil, err
 	}
@@ -123,6 +125,61 @@ func ParseTelemetryReport(s string) (*StdTelemetryReport, error) {
 	return r, err
 }
 
-//func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, error) {
-//
-//}
+func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, error) {
+
+	var err error
+
+	r := &CompressedTelemetryReport{}
+
+	tbs := []byte(s)
+
+	if len(s) != 16 {
+		err := fmt.Errorf("Compressed telemetry message has incorrect length.  Should be 16, is %v.\n", len(s))
+		return nil, err
+	}
+
+	r.Sequence, err = DecodeBase91Telemetry(tbs[1:3])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	r.A1, err = DecodeBase91Telemetry(tbs[3:5])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	r.A2, err = DecodeBase91Telemetry(tbs[5:7])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	r.A3, err = DecodeBase91Telemetry(tbs[7:9])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	r.A4, err = DecodeBase91Telemetry(tbs[9:11])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	r.A5, err = DecodeBase91Telemetry(tbs[11:13])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+
+	dtm, err := DecodeBase91Telemetry(tbs[13:15])
+	if err != nil {
+		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+		return nil, err
+	}
+	r.Digital = byte(dtm)
+
+	return r, nil
+}
