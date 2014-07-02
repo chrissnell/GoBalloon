@@ -7,3 +7,5 @@ aprs/test/compressed-position-test
 geospatial/test/geo-test
 
 aprs/test/telemetry-report-test
+
+aprs/test/position-test
