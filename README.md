@@ -1,4 +1,23 @@
 GoBalloon
 =========
 
-High Altitude Balloon payload controller in Go.   The base directory is only a shell, currently. If you want to see where the party is happening, have a look at the ax25 and aprs libraries.   AX.25/KISS receive and send is currently functional, as is the encoding of compressed position and telemetry packets.   More to follow.
+High Altitude Balloon payload controller in Go.   
+
+What Works
+----------
+Initial work has been focused on making the communication and telemetry systems functional.  To that end, this is what works right now:
+
+* NMEA GPS processing / gpsd integration
+* AX.25/KISS packet encoding and decoding over local serial line and TCP
+* APRS position reports encoding and decoding (compressed and uncompressed formats)
+* APRS telemetry reports encoding and decoding (compressed and uncompressed)
+* APRS-style Base91 encoding
+
+Not Yet Complete
+----------------
+
+* Camera control (picture/video taking via CHDK, servo control)
+* Flight controls (strobe, buzzer, balloon cut-down)
+* APRS messaging
+* Text-based console for chase vehicles
+* More geospatial calculations
