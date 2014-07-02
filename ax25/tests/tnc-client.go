@@ -15,6 +15,7 @@ import (
 	"github.com/chrissnell/GoBalloon/geospatial"
 	"log"
 	"net"
+	_ "time"
 )
 
 func main() {
@@ -43,6 +44,22 @@ func main() {
 		},
 	}
 
+	c := aprs.CompressedTelemetryReport{
+		A1:       7714,
+		A2:       13,
+		A3:       2,
+		A4:       3006,
+		A5:       429,
+		Digital:  51,
+		Sequence: 12,
+		//Sequence: uint16(time.Now().Second()),
+	}
+
+	_, err := aprs.CreateCompressedTelemetryReport(&c)
+	if err != nil {
+		log.Fatalln("Could not create compressed telemetry report: ", err)
+	}
+
 	// path := []ax25.APRSAddress{
 	// 	{
 	// 		Callsign: "K9JEB",
@@ -51,12 +68,13 @@ func main() {
 	// }
 
 	point := geospatial.NewPoint()
-	point.Lat = 47.262347
-	point.Lon = -122.46988
-	point.Alt = 1702
+	point.Lat = 47.2111
+	point.Lon = -122.4898
+	point.Alt = 207
 
 	position := aprs.CreateCompressedPosition(point, '/', 'O')
-	body := fmt.Sprint(position, "GoBalloon Test http://nw5w.com")
+	//body := fmt.Sprint(position, "GoBalloon-Test", ctr)
+	body := position + "GoBalloon-NotFlying"
 
 	a := ax25.APRSData{
 		Source: psource,
@@ -81,6 +99,8 @@ func main() {
 	} else {
 		log.Printf("Wrote %v bytes to %v", bw, conn.RemoteAddr())
 	}
+
+	fmt.Printf("Packet -> %v\n", packet)
 
 	err = conn.Close()
 	if err != nil {
