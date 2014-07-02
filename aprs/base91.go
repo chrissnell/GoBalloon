@@ -31,17 +31,17 @@ func AltitudeCompress(a float64) []byte {
 	return buffer.Bytes()
 }
 
-func LatPrecompress(l float64) (p float64) {
+func LatPrecompress(l float64) float64 {
 
 	// Formula for pre-compression of latitude, prior to Base91 conversion
-	p = 380926 * (90 - l)
+	p := 380926 * (90 - l)
 	return p
 }
 
-func LonPrecompress(l float64) (p float64) {
+func LonPrecompress(l float64) float64 {
 
 	// Formula for pre-compression of longitude, prior to Base91 conversion
-	p = 190463 * (180 + l)
+	p := 190463 * (180 + l)
 	return p
 }
 
@@ -62,17 +62,10 @@ func EncodeBase91Position(l int) []byte {
 
 func EncodeBase91Telemetry(l uint16) ([]byte, error) {
 
-	// l, err := strconv.Atoi(t)
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	if l > 8280 {
 		err := errors.New("Cannot encode telemetry value larger than 8280")
 		return nil, err
 	}
-
-	fmt.Printf("About to encode: %v\n", l)
 
 	b91 := make([]byte, 2)
 	p1_div := int(l / 91)
@@ -80,4 +73,40 @@ func EncodeBase91Telemetry(l uint16) ([]byte, error) {
 	b91[0] = byte(p1_div) + 33
 	b91[1] = byte(p1_rem) + 33
 	return b91, nil
+}
+
+func DecodeBase91Lat(p []byte) (float64, error) {
+	if len(p) != 4 {
+		return 0, fmt.Errorf("DecodeBase91Lat requires a four-byte slice as input.  Slice given: %v\n", p)
+	}
+	d := float64(90 - ((float64(p[0]-33))*(91*91*91)+(float64(p[1]-33))*(91*91)+(float64(p[2]-33))*91+float64(p[3]-33))/380926)
+
+	return d, nil
+}
+
+func DecodeBase91Lon(p []byte) (float64, error) {
+	if len(p) != 4 {
+		return 0, fmt.Errorf("DecodeBase91Lot requires a four-byte slice as input.  Slice given: %v\n", p)
+	}
+	d := float64(-180 + ((float64(p[0]-33))*(91*91*91)+(float64(p[1]-33))*(91*91)+(float64(p[2]-33))*91+float64(p[3]-33))/190463)
+
+	return d, nil
+}
+
+func DecodeBase91Altitude(p []byte) (float64, error) {
+	if len(p) != 2 {
+		return 0, fmt.Errorf("DecodeBase91Altitude requires a two-byte slice as input.  Slice given: %v\n", p)
+	}
+	cs := (float64(p[0]-33))*91 + float64(p[1]-33)
+	alt := math.Pow(1.002, cs)
+
+	return alt, nil
+}
+
+func DecodeBase91Telemetry(e []byte) (uint16, error) {
+	if len(e) < 2 {
+		return 0, fmt.Errorf("DecodeBase91Telemetry requires a two-byte slice as input.  Slice given: %v\n", e)
+	}
+	d := (int(e[0]-33))*91 + (int(e[1] - 33))
+	return uint16(d), nil
 }
