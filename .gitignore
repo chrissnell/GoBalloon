@@ -9,3 +9,5 @@ geospatial/test/geo-test
 aprs/test/telemetry-report-test
 
 aprs/test/position-test
+
+aprs/test/message-test
