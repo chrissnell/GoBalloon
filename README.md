@@ -20,5 +20,6 @@ Not Yet Complete
 * Camera control (picture/video taking via CHDK, servo control)
 * Flight controls (strobe, buzzer, balloon cut-down)
 * Text-based console for chase vehicles
+* PCB design for BeagleBone cape that integrates GPS & TNC modules
 * More geospatial calculations
 * High altitude digipeater
