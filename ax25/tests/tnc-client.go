@@ -46,35 +46,27 @@ func main() {
 
 	c := aprs.CompressedTelemetryReport{
 		A1:       7714,
-		A2:       13,
-		A3:       2,
+		A2:       4,
+		A3:       3,
 		A4:       3006,
 		A5:       429,
 		Digital:  51,
-		Sequence: 12,
-		//Sequence: uint16(time.Now().Second()),
+		Sequence: 17,
 	}
 
-	_, err := aprs.CreateCompressedTelemetryReport(&c)
+	ctr, err := aprs.CreateCompressedTelemetryReport(&c)
 	if err != nil {
 		log.Fatalln("Could not create compressed telemetry report: ", err)
 	}
 
-	// path := []ax25.APRSAddress{
-	// 	{
-	// 		Callsign: "K9JEB",
-	// 		SSID:     2,
-	// 	},
-	// }
-
 	point := geospatial.NewPoint()
 	point.Lat = 47.2111
-	point.Lon = -122.4898
-	point.Alt = 207
+	point.Lon = -122.4818
+	point.Altitude = 217
 
-	position := aprs.CreateCompressedPosition(point, '/', 'O')
-	//body := fmt.Sprint(position, "GoBalloon-Test", ctr)
-	body := position + "GoBalloon-NotFlying"
+	position := aprs.CreateCompressedPositionReport(point, '/', 'O')
+	body := fmt.Sprint(position, "GoBalloon-Test", ctr)
+	//body := position + "GoBalloon-NotFlying"
 
 	a := ax25.APRSData{
 		Source: psource,
