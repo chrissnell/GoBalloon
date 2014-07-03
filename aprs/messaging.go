@@ -93,32 +93,3 @@ func DecodeMessage(m string) (*Message, error) {
 
 	return &dm, nil
 }
-
-// Decodes a message ACK/REJ and returns a Message object with the Recipient and ID fields populated
-// along with a boolean (true for ACK, false for REJect)
-// func DecodeMessageACK(m string) (*Message, bool, error) {
-// 	dm := Message{}
-
-// 	if len(m) < 14 {
-// 		return &dm, false, fmt.Errorf("Message ACK length too short.  Should be >= 14 but is %v.", len(m))
-// 	}
-
-// 	var ackregex, _ = regexp.Compile(`:(.{9}):([a-z]{3})(.{1,5})`)
-// 	recipient := strings.TrimSpace(ackregex.FindAllStringSubmatch(m, -1)[0][1])
-// 	response := ackregex.FindAllStringSubmatch(m, -1)[0][2]
-// 	dm.ID = ackregex.FindAllStringSubmatch(m, -1)[0][3]
-
-// 	if strings.Contains(recipient, "-") {
-// 		rparts := strings.Split(recipient, "-")
-// 		dm.Recipient.Callsign = rparts[0]
-// 		ssid, err := strconv.ParseUint(rparts[1], 10, 8)
-// 		if err != nil {
-// 			return &dm, false, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
-// 		}
-// 		dm.Recipient.SSID = uint8(ssid)
-// 	} else {
-// 		dm.Recipient.Callsign = recipient
-// 	}
-
-// 	return &dm, false, nil
-// }
