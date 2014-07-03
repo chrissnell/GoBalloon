@@ -21,3 +21,4 @@ Not Yet Complete
 * Flight controls (strobe, buzzer, balloon cut-down)
 * Text-based console for chase vehicles
 * More geospatial calculations
+* High altitude digipeater
