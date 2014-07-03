@@ -15,12 +15,6 @@ import (
 	"strings"
 )
 
-// APRSAddress represents an AX.25 source or destination address
-type APRSAddress struct {
-	Callsign string
-	SSID     uint8
-}
-
 // AX.25 Information field
 //type Info string
 
