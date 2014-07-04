@@ -58,7 +58,7 @@ func main() {
 	position := aprs.CreateCompressedPosition(point, '/', 'O')
 	body := fmt.Sprint(position, "GoBalloon Test http://nw5w.com")
 
-	a := ax25.APRSData{
+	a := ax25.APRSPacket{
 		Source: psource,
 		Dest:   pdest,
 		Path:   path,

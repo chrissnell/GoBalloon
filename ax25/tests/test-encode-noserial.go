@@ -28,7 +28,7 @@ func main() {
 		SSID:     1,
 	}
 
-	a := ax25.APRSData{
+	a := ax25.APRSPacket{
 		Source: psource,
 		Dest:   pdest,
 		Path:   []ax25.APRSAddress{path1, path2},

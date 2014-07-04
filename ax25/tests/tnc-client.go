@@ -68,7 +68,7 @@ func main() {
 	body := fmt.Sprint(position, "GoBalloon-Test", ctr)
 	//body := position + "GoBalloon-NotFlying"
 
-	a := ax25.APRSData{
+	a := ax25.APRSPacket{
 		Source: psource,
 		Dest:   pdest,
 		Path:   path,
