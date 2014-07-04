@@ -109,7 +109,7 @@ func processGPSDSentences(msg chan string) {
 				fmt.Println("--- TPV sentence received")
 				currentPosition.Lon = tpv.Lon
 				currentPosition.Lat = tpv.Lat
-				currentPosition.Alt = tpv.Alt
+				currentPosition.Altitude = tpv.Alt
 				fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
 			}
 		}
