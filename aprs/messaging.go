@@ -45,51 +45,56 @@ func CreateMessageACK(m *Message) (string, error) {
 	return fmt.Sprintf(":%-9s:ack%s", m.Sender.String(), m.ID), nil
 }
 
-func DecodeMessage(m string) (*Message, error) {
+func DecodeMessage(m string) (*Message, string, error) {
+	var matches []string
 	dm := Message{}
 
 	if len(m) < 11 {
-		return &dm, fmt.Errorf("Message length too short.  Should be >= 11 but is %v.", len(m))
+		return &dm, m, fmt.Errorf("Message length too short.  Should be >= 11 but is %v.", len(m))
 	}
 
 	if m[0] != ':' || m[10] != ':' {
-		return &dm, errors.New("Invalid message format.  1st and 10th characters should be ':'")
+		return &dm, m, errors.New("Invalid message format.  1st and 10th characters should be ':'")
 	}
 
-	recipregex, _ := regexp.Compile(`:?(.{0,9}):?([a-zA-Z]{0,3})(.{0,5})`)
-	r_field := recipregex.FindAllStringSubmatch(m, -1)[0][1]
-	if len(r_field) != 9 {
-		return &dm, fmt.Errorf("Message recipient has invalid length.  Should be 9 chars, space padded but is only %v.\n", len(r_field))
-	}
+	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?(.*)$`)
 
-	recipient := strings.TrimSpace(r_field)
+	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
 
-	if strings.Contains(recipient, "-") {
-		rparts := strings.Split(recipient, "-")
-		dm.Recipient.Callsign = rparts[0]
-		ssid, err := strconv.ParseUint(rparts[1], 10, 8)
-		if err != nil {
-			return &dm, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
+		recipient := strings.TrimSpace(matches[1])
+
+		if strings.Contains(recipient, "-") {
+			rparts := strings.Split(recipient, "-")
+			dm.Recipient.Callsign = rparts[0]
+			ssid, err := strconv.ParseUint(rparts[1], 10, 8)
+			if err != nil {
+				return &dm, m, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
+			}
+			dm.Recipient.SSID = uint8(ssid)
+		} else {
+			dm.Recipient.Callsign = recipient
 		}
-		dm.Recipient.SSID = uint8(ssid)
+
+		dm.Text = matches[3]
+
+		if matches[2] != "" {
+			if strings.ToLower(matches[2][0:3]) == "ack" {
+				dm.ACK = true
+				dm.ID = matches[2][3:]
+				return &dm, m, nil
+			}
+
+			if strings.ToLower(matches[2][0:3]) == "rej" {
+				dm.REJ = true
+				dm.ID = matches[2][3:]
+				return &dm, m, nil
+			}
+		}
+
+		dm.Text = matches[3]
+
+		return &dm, m, nil
 	} else {
-		dm.Recipient.Callsign = recipient
+		return &dm, m, nil
 	}
-
-	if strings.ToLower(recipregex.FindAllStringSubmatch(m, -1)[0][2]) == "ack" {
-		dm.ID = recipregex.FindAllStringSubmatch(m, -1)[0][3]
-		dm.ACK = true
-		return &dm, nil
-	}
-
-	if strings.ToLower(recipregex.FindAllStringSubmatch(m, -1)[0][2]) == "rej" {
-		dm.ID = recipregex.FindAllStringSubmatch(m, -1)[0][3]
-		dm.REJ = true
-		return &dm, nil
-	}
-
-	textregex, _ := regexp.Compile(`:.{0,9}:(.*)`)
-	dm.Text = textregex.FindAllStringSubmatch(m, -1)[0][1]
-
-	return &dm, nil
 }
