@@ -27,15 +27,15 @@ var clearSSIDMask = byte(0x30 << 1)
 
 // This encodes an AX.25 command packet.  It is differentiated from
 // the response packet function below by the bitmask applied to the SSID bytes.
-func EncodeAX25Command(in APRSData) ([]byte, error) {
+func EncodeAX25Command(in APRSPacket) ([]byte, error) {
 	return CreatePacket(in, clearSSIDMask, setSSIDMask)
 }
 
-func EncodeAX25Response(in APRSData) ([]byte, error) {
+func EncodeAX25Response(in APRSPacket) ([]byte, error) {
 	return CreatePacket(in, setSSIDMask, clearSSIDMask)
 }
 
-func CreatePacket(a APRSData, smask, dmask byte) (em []byte, err error) {
+func CreatePacket(a APRSPacket, smask, dmask byte) (em []byte, err error) {
 
 	if len(a.Source.Callsign) < 4 {
 		err = errors.New("Invalid source address.")

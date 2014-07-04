@@ -18,7 +18,7 @@ import (
 // AX.25 Information field
 //type Info string
 
-type APRSData struct {
+type APRSPacket struct {
 	Original string
 	Source   APRSAddress
 	Dest     APRSAddress
@@ -41,7 +41,7 @@ func NewDecoder(r io.Reader) *Decoder {
 }
 
 // Process the next APRS packet we get
-func (d *Decoder) Next() (APRSData, error) {
+func (d *Decoder) Next() (APRSPacket, error) {
 	var err error
 
 	frame := []byte{}
@@ -50,8 +50,8 @@ func (d *Decoder) Next() (APRSData, error) {
 		// Read forward until we encounter 0xc0 and return this data including that 0xc0.
 		frame, err = d.r.ReadBytes(byte(0xc0))
 		if err != nil {
-			// Unable to read for some reason so we return an empty APRSData{} struct and our error
-			return APRSData{}, err
+			// Unable to read for some reason so we return an empty APRSPacket{} struct and our error
+			return APRSPacket{}, err
 		}
 	}
 
@@ -86,7 +86,7 @@ func parseAX25Address(in []byte) APRSAddress {
 	return a
 }
 
-func decodeMessage(frame []byte) (dm APRSData, err error) {
+func decodeMessage(frame []byte) (dm APRSPacket, err error) {
 	/*
 	   KISS Packet format
 
