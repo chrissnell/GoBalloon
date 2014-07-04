@@ -23,6 +23,7 @@ Not Yet Complete
 ----------------
 * Camera control (picture/video taking via CHDK, servo control)
 * Flight controls (strobe, buzzer, balloon cut-down)
+* APRS Controller (uses APRS and AX.25 libraries to send and receive messages to/from ground control)
 * Text-based console for chase vehicles
 * PCB design for BeagleBone cape that integrates GPS & TNC modules
 * More geospatial calculations
