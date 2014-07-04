@@ -27,7 +27,7 @@ var (
 func main() {
 
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
-	remotetnc = flag.String("remotetnc", "", "Remote TNC server")
+	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 
 	flag.Parse()
