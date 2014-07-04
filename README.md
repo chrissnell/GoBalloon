@@ -12,11 +12,15 @@ Initial work has been focused on making the communication and telemetry systems 
 * APRS position reports encoding and decoding (compressed and uncompressed formats)
 * APRS telemetry reports encoding and decoding (compressed and uncompressed)
 * APRS messaging
+* APRS-IS client (ganked from @dustin)
 * APRS-style Base91 encoding
+
+In Progress
+-----------
+* Incoming packet parser to dispatch to the appropriate decoder
 
 Not Yet Complete
 ----------------
-* Incoming packet parser to dispatch to the appropriate decoder
 * Camera control (picture/video taking via CHDK, servo control)
 * Flight controls (strobe, buzzer, balloon cut-down)
 * Text-based console for chase vehicles
