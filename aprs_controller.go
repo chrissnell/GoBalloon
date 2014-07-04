@@ -24,7 +24,7 @@ var (
 func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 	fmt.Println("--- sendAPRSBeacon start")
 
-	var a ax25.APRSData
+	var a ax25.APRSPacket
 
 	lowpath := []ax25.APRSAddress{
 		{
@@ -57,26 +57,26 @@ func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 			if currentPosition.Lat != 0 || currentPosition.Lon != 0 {
 
 				// This is how we handle incoming APRS messages.  Not yet implemented
-				//var amsg = fmt.Sprintf("hi lat=%v lon=%v alt=%v", currentPosition.Lat, currentPosition.Lon, currentPosition.Alt)
+				//var amsg = fmt.Sprintf("hi lat=%v lon=%v alt=%v", currentPosition.Lat, currentPosition.Lon, currentPosition.Altitude)
 				//aprsMessage <- amsg
 
 				// Store our current position in a geospatial.Point
 				point := geospatial.NewPoint()
 				point.Lat = currentPosition.Lat
 				point.Lon = currentPosition.Lon
-				point.Alt = currentPosition.Alt
+				point.Altitude = currentPosition.Altitude
 
 				// Create a compressed position report from that point, using the Balloon symbol
-				position := aprs.CreateCompressedPosition(point, '/', 'O')
+				position := aprs.CreateCompressedPositionReport(point, '/', 'O')
 
 				// Append our comment to the position report
 				body := fmt.Sprint(position, "GoBalloon Test http://nw5w.com")
 
 				// We use a much smaller path when flying above 5000' MSL
-				if currentPosition.Alt > 5000 {
+				if currentPosition.Altitude > 5000 {
 
 					// Form an APRS data packet
-					a = ax25.APRSData{
+					a = ax25.APRSPacket{
 						Source: aprssource,
 						Dest:   aprsdest,
 						Path:   highpath,
@@ -85,7 +85,7 @@ func aprsBeacon(aprssource, aprsdest ax25.APRSAddress) {
 				} else {
 
 					// Form an APRS data packet
-					a = ax25.APRSData{
+					a = ax25.APRSPacket{
 						Source: aprssource,
 						Dest:   aprsdest,
 						Path:   lowpath,
