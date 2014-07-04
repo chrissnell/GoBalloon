@@ -68,7 +68,7 @@ func main() {
 
 	if *sendit {
 
-		a := ax25.APRSData{
+		a := ax25.APRSPacket{
 			Source: psource,
 			Dest:   pdest,
 			Path:   path,
@@ -107,11 +107,17 @@ func main() {
 
 	fmt.Printf("Encoded message: %v\n", ms)
 
-	dm, err := aprs.DecodeMessage(ms)
+	dm, remains, err := aprs.DecodeMessage(ms)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
 
 	fmt.Printf("Decoded message: %+v\n", dm)
+	fmt.Printf("Remains: %v\n", remains)
+
+	dm, remains, err = aprs.DecodeMessage(":NW5W-7   :ACK707")
+
+	fmt.Printf("Decoded message: %+v\n", dm)
+	fmt.Printf("Remains: %v\n", remains)
 
 }
