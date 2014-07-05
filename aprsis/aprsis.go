@@ -11,7 +11,6 @@ package aprsis
 import (
 	"errors"
 	"fmt"
-	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"io"
 	"io/ioutil"
@@ -32,7 +31,6 @@ type APRSIS struct {
 // Next returns the next APRS message from this connection.
 func (a *APRSIS) Next() (rv ax25.APRSPacket, err error) {
 	var line string
-	var dm *aprs.Message
 	for err == nil || err == errEmptyMsg {
 		line, err = a.conn.ReadLine()
 		if err != nil {
@@ -44,13 +42,6 @@ func (a *APRSIS) Next() (rv ax25.APRSPacket, err error) {
 		if len(line) > 0 && line[0] != '#' {
 			rv = ParseAPRSISPacket(line)
 
-			dm, rv.Body, err = aprs.DecodeMessage(rv.Body)
-
-			fmt.Printf("Message: %+v\n", dm)
-
-			//if !rv.IsValid() {
-			//	err = errInvalidMsg
-			//}
 			return rv, err
 		}
 	}
@@ -128,6 +119,7 @@ func (a *APRSIS) Auth(user, pass, filter string) error {
 		filter = fmt.Sprintf(" filter %s", filter)
 	}
 
+	//fmt.Printf("Logging in --> user  %s pass %s vers goaprs 0.1%s\n", user, pass, filter)
 	return a.conn.PrintfLine("user %s pass %s vers goaprs 0.1%s",
 		user, pass, filter)
 }
