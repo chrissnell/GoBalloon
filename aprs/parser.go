@@ -20,30 +20,44 @@ type APRSData struct {
 	Message             Message
 	StandardTelemetry   StdTelemetryReport
 	CompressedTelemetry CompressedTelemetryReport
+	SymbolTable         rune
+	SymbolCode          rune
+	Comment             string
 }
 
 func ParsePacket(p *ax25.APRSPacket) *APRSData {
+
 	ad := &APRSData{}
 	d := []byte(p.Body)
-
-	fmt.Printf("%v\n", p.Body)
 
 	// Position reports are at least 14 chars long
 	if len(d) >= 14 {
 		// Position reports w/o timestamp start with ! or =
 		if d[0] == byte('!') || d[0] == byte('=') {
-			fmt.Println("---> Position packet (no timestamp)")
 			// Compressed reports will have a symbol table ID in their second byte
 			if d[1] == byte('/') || d[1] == byte('\\') {
-				fmt.Println("Compressed position packet")
+				fmt.Println("---> Compressed position packet")
+			} else {
+				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithoutTimestamp(p.Body)
 			}
 		}
 	}
 
-	// Messages have colons at the 1st and 11th bytes
-	if d[0] == ':' || d[10] == ':' {
-		fmt.Println("---> Message packet")
+	if len(d) >= 32 {
+		// Signature of a standard uncompressed telemetry packet
+		if d[0] == byte('T') && d[1] == byte('#') && d[5] == byte(',') {
+			ad.StandardTelemetry, p.Body = ParseUncompressedTelemetryReport(p.Body)
+		}
 	}
 
+	// Messages have colons at the 1st and 11th bytes
+	if len(d) >= 11 {
+		if d[0] == ':' || d[10] == ':' {
+			ad.Message, p.Body, _ = DecodeMessage(p.Body)
+		}
+	}
+
+	ad.Comment = p.Body
 	return ad
+
 }
