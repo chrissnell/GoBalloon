@@ -9,17 +9,17 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
-	"strings"
 )
 
 type StdTelemetryReport struct {
 	Sequence uint16
-	A1       uint8
-	A2       uint8
-	A3       uint8
-	A4       uint8
-	A5       uint8
+	A1       float64
+	A2       float64
+	A3       float64
+	A4       float64
+	A5       float64
 	Digital  byte
 }
 
@@ -95,34 +95,61 @@ func CreateCompressedTelemetryReport(r *CompressedTelemetryReport) (string, erro
 
 }
 
-func ParseUncompressedTelemetryReport(s string) (*StdTelemetryReport, error) {
-	var err error
-	var errMissingTelemElements = errors.New("Telemetry message has incorrect number of elements")
-	var telems []string
+func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
+	var matches []string
 
-	r := &StdTelemetryReport{}
+	r := StdTelemetryReport{}
 
-	telems = strings.Split(s[1:], ",")
-	if len(telems) != 7 {
-		err = errMissingTelemElements
-		return nil, err
+	tr := regexp.MustCompile(`T#([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([01]{8})(.*)$`)
+	//fmt.Printf("matches: %v\n", tr.FindStringSubmatch(s))
+	matches = tr.FindStringSubmatch(s)
+
+	if matches = tr.FindStringSubmatch(s); len(matches) >= 6 {
+		seq, _ := strconv.ParseUint(matches[1], 10, 16)
+		r.Sequence = uint16(seq)
+		r.A1, _ = strconv.ParseFloat(matches[2], 64)
+		r.A2, _ = strconv.ParseFloat(matches[3], 64)
+		r.A3, _ = strconv.ParseFloat(matches[4], 64)
+		r.A4, _ = strconv.ParseFloat(matches[5], 64)
+		r.A5, _ = strconv.ParseFloat(matches[6], 64)
+
+		r.Digital = convertBinaryStringToUint8(matches[7])
+		r := tr.ReplaceAllString(s, "")
+		fmt.Printf("Remains: %v\n", r)
 	}
 
-	a1, err := strconv.Atoi(telems[0])
-	r.A1 = uint8(a1)
-	a2, err := strconv.Atoi(telems[1])
-	r.A2 = uint8(a2)
-	a3, err := strconv.Atoi(telems[2])
-	r.A3 = uint8(a3)
-	a4, err := strconv.Atoi(telems[3])
-	r.A4 = uint8(a4)
-	a5, err := strconv.Atoi(telems[4])
-	r.A5 = uint8(a5)
+	return r, s
+}
 
-	di, err := strconv.Atoi(telems[5])
-	r.Digital = byte(di)
+func convertBinaryStringToUint8(a string) byte {
+	var b byte
 
-	return r, err
+	if a[0] == '1' {
+		b |= 0x80
+	}
+	if a[1] == '1' {
+		b |= 0x40
+	}
+	if a[2] == '1' {
+		b |= 0x20
+	}
+	if a[3] == '1' {
+		b |= 0x10
+	}
+	if a[4] == '1' {
+		b |= 0x8
+	}
+	if a[5] == '1' {
+		b |= 0x4
+	}
+	if a[6] == '1' {
+		b |= 0x2
+	}
+	if a[7] == '1' {
+		b |= 0x1
+	}
+
+	return b
 }
 
 func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, error) {
