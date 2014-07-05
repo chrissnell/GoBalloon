@@ -86,76 +86,88 @@ func CreateCompressedPositionReport(p *geospatial.Point, symTable, symCode rune)
 	return buffer.String()
 }
 
-func DecodeCompressedPositionReport(c string) (*geospatial.Point, rune, rune, error) {
+func DecodeCompressedPositionReport(c string) (*geospatial.Point, rune, rune, string, error) {
 	var err error
 	s := []byte(c)
 
 	p := &geospatial.Point{}
-	if len(c) != 14 {
-		return p, ' ', ' ', fmt.Errorf("Compressed position has invalid length.  Should be 14, is %v.\n", len(c))
+
+	if (c[0] == '!' || c[0] == '=') && (c[1] == '/' || c[1] == '\\') {
+
+		symTable := rune(s[1])
+		symCode := rune(s[10])
+
+		p.Lat, err = DecodeBase91Lat(s[2:6])
+		if err != nil {
+			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
+		}
+
+		p.Lon, err = DecodeBase91Lon(s[6:10])
+		if err != nil {
+			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
+		}
+
+		p.Altitude, err = DecodeBase91Altitude(s[11:13])
+		if err != nil {
+			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
+		}
+
+		c = c[13:]
+
+		return p, symTable, symCode, c, nil
+	} else {
+		return p, ' ', ' ', c, nil
 	}
-
-	symTable := rune(s[1])
-	symCode := rune(s[10])
-
-	p.Lat, err = DecodeBase91Lat(s[2:6])
-	if err != nil {
-		return p, ' ', ' ', fmt.Errorf("Could not decode compressed latitude: %v\n", err)
-	}
-
-	p.Lon, err = DecodeBase91Lon(s[6:10])
-	if err != nil {
-		return p, ' ', ' ', fmt.Errorf("Could not decode compressed longitude: %v\n", err)
-	}
-
-	p.Altitude, err = DecodeBase91Altitude(s[11:13])
-	if err != nil {
-		return p, ' ', ' ', fmt.Errorf("Could not decode compressed altitude: %v\n", err)
-	}
-
-	return p, symTable, symCode, nil
 }
 
-func DecodeUncompressedPositionReportWithoutTimestamp(c string) (*geospatial.Point, rune, rune, error) {
+func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
 	// Example:   !4903.50N/07201.75W-
 
-	var err error
+	p := geospatial.Point{}
 
-	p := &geospatial.Point{}
+	if (c[0] == '!' || c[0] == '=') && (c[9] == '/' || c[9] == '\\') && len(c) >= 20 {
 
-	symTable := rune(c[9])
-	symCode := rune(c[19])
+		symTable := rune(c[9])
+		symCode := rune(c[19])
 
-	la1, err := strconv.ParseFloat(c[1:3], 64)
-	if err != nil {
-		return p, symTable, symCode, err
+		la1, err := strconv.ParseFloat(c[1:3], 64)
+		if err != nil {
+			return p, symTable, symCode, c, err
+		}
+		la2, err := strconv.ParseFloat(c[3:7], 64)
+		if err != nil {
+			return p, symTable, symCode, c, err
+		}
+
+		lat := la1 + la2/60
+		if c[8] == 'S' {
+			lat = 0 - lat
+		}
+
+		lo1, err := strconv.ParseFloat(c[10:13], 64)
+		if err != nil {
+			return p, symTable, symCode, c, err
+		}
+		lo2, err := strconv.ParseFloat(c[13:18], 64)
+		if err != nil {
+			return p, symTable, symCode, c, err
+		}
+
+		lon := lo1 + lo2/60
+
+		if c[18] == 'W' {
+			lon = 0 - lon
+		}
+
+		p.Lat = lat
+		p.Lon = lon
+
+		if len(c) > 20 {
+			c = c[19:]
+		}
+
+		return p, symTable, symCode, c, nil
+	} else {
+		return p, ' ', ' ', c, nil
 	}
-	la2, err := strconv.ParseFloat(c[3:7], 64)
-	if err != nil {
-		return p, symTable, symCode, err
-	}
-
-	lat := la1 + la2/60
-	if c[8] == 'S' {
-		lat = 0 - lat
-	}
-
-	lo1, err := strconv.ParseFloat(c[10:13], 64)
-	if err != nil {
-		return p, symTable, symCode, err
-	}
-	lo2, err := strconv.ParseFloat(c[13:18], 64)
-	if err != nil {
-		return p, symTable, symCode, err
-	}
-
-	lon := lo1 + lo2/60
-
-	if c[18] == 'W' {
-		lon = 0 - lon
-	}
-
-	p.Lat = lat
-	p.Lon = lon
-	return p, symTable, symCode, nil
 }
