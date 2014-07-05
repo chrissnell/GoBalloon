@@ -23,7 +23,7 @@ type Message struct {
 	REJ       bool // Set true if this is a message REJ response
 }
 
-func CreateMessage(m *Message) (string, error) {
+func CreateMessage(m Message) (string, error) {
 	var idtxt string
 
 	if len(m.ID) != 0 {
@@ -32,7 +32,7 @@ func CreateMessage(m *Message) (string, error) {
 	return fmt.Sprintf(":%-9s:%s%s", m.Recipient.String(), m.Text, idtxt), nil
 }
 
-func CreateMessageACK(m *Message) (string, error) {
+func CreateMessageACK(m Message) (string, error) {
 
 	if len(m.Sender.String()) == 0 {
 		return "", errors.New("Can't send an ACK without an addressee to reply to.")
@@ -45,21 +45,24 @@ func CreateMessageACK(m *Message) (string, error) {
 	return fmt.Sprintf(":%-9s:ack%s", m.Sender.String(), m.ID), nil
 }
 
-func DecodeMessage(m string) (*Message, string, error) {
+func DecodeMessage(m string) (Message, string, error) {
 	var matches []string
 	dm := Message{}
 
 	if len(m) < 11 {
-		return &dm, m, fmt.Errorf("Message length too short.  Should be >= 11 but is %v.", len(m))
+		return dm, m, fmt.Errorf("Message length too short.  Should be >= 11 but is %v.", len(m))
 	}
 
 	if m[0] != ':' || m[10] != ':' {
-		return &dm, m, errors.New("Invalid message format.  1st and 10th characters should be ':'")
+		return dm, m, errors.New("Invalid message format.  1st and 10th characters should be ':'")
 	}
 
-	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?(.*)$`)
+	// APRS message regex from Hell.   Looks for the message, optional ACK/REJ, message ID, and whatever else.
+	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?((.+)\{(\w{1,5}$))?(.*)$`)
 
 	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
+
+		m = msgregex.ReplaceAllString(m, "")
 
 		recipient := strings.TrimSpace(matches[1])
 
@@ -68,33 +71,38 @@ func DecodeMessage(m string) (*Message, string, error) {
 			dm.Recipient.Callsign = rparts[0]
 			ssid, err := strconv.ParseUint(rparts[1], 10, 8)
 			if err != nil {
-				return &dm, m, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
+				return dm, m, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
 			}
 			dm.Recipient.SSID = uint8(ssid)
 		} else {
 			dm.Recipient.Callsign = recipient
 		}
 
-		dm.Text = matches[3]
-
 		if matches[2] != "" {
 			if strings.ToLower(matches[2][0:3]) == "ack" {
 				dm.ACK = true
 				dm.ID = matches[2][3:]
-				return &dm, m, nil
+				return dm, m, nil
 			}
 
 			if strings.ToLower(matches[2][0:3]) == "rej" {
 				dm.REJ = true
 				dm.ID = matches[2][3:]
-				return &dm, m, nil
+				return dm, m, nil
 			}
 		}
 
-		dm.Text = matches[3]
+		if matches[5] != "" {
+			// This message has an ID so we capture it and don't include it with the message text
+			dm.ID = matches[5]
+			dm.Text = matches[4]
+		} else {
+			dm.Text = matches[3]
+		}
+		return dm, m, nil
 
-		return &dm, m, nil
 	} else {
-		return &dm, m, nil
+		return dm, m, nil
 	}
+
 }
