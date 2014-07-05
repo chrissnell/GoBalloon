@@ -18,6 +18,7 @@ Initial work has been focused on making the communication and telemetry systems 
 In Progress
 -----------
 * Incoming packet parser to dispatch to the appropriate decoder
+* Converting existing APRS decoders to use regexp for improved reliability and inter-operability
 
 Not Yet Complete
 ----------------
