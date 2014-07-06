@@ -11,11 +11,12 @@ import (
 )
 
 type Point struct {
-	Lat      float64
-	Lon      float64
-	Altitude float64
-	Speed    float64
-	Heading  uint16
+	Lat        float64
+	Lon        float64
+	Altitude   float64
+	Speed      float32
+	Heading    uint16
+	RadioRange float32
 }
 
 func NewPoint() *Point {
