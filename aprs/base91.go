@@ -103,6 +103,22 @@ func DecodeBase91Altitude(p []byte) (float64, error) {
 	return alt, nil
 }
 
+func DecodeBase91CourseSpeed(p []byte) (uint16, float32, error) {
+	if len(p) != 2 {
+		return 0, 0, fmt.Errorf("DecodeBase91CourseSpeed requires a two-byte slice as input.  Slice given: %v\n", p)
+	}
+	course := uint16((p[0] - 33) * 4)
+	pow := float64(byte(p[1]) - 33)
+	speed := float32(math.Pow(1.08, pow) - 1)
+	return course, speed, nil
+}
+
+func DecodeBase91RadioRange(p byte) float32 {
+	pow := float64(p - 33)
+	rrange := float32(math.Pow(1.08, pow) * 2)
+	return rrange
+}
+
 func DecodeBase91Telemetry(e []byte) (uint16, error) {
 	if len(e) < 2 {
 		return 0, fmt.Errorf("DecodeBase91Telemetry requires a two-byte slice as input.  Slice given: %v\n", e)
