@@ -36,7 +36,8 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 		if d[0] == byte('!') || d[0] == byte('=') {
 			// Compressed reports will have a symbol table ID in their second byte
 			if d[1] == byte('/') || d[1] == byte('\\') {
-				fmt.Println("---> Compressed position packet")
+				fmt.Printf("- - - - - > DECODING COMPRESSED POSITION REPORT  ----> %v\n", p.Body)
+				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeCompressedPositionReport(p.Body)
 			} else {
 				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithoutTimestamp(p.Body)
 			}
