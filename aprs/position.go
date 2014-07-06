@@ -149,51 +149,58 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
 	// Example:   !4903.50N/07201.75W-
 
+	var matches []string
 	p := geospatial.Point{}
 
 	if (c[0] == '!' || c[0] == '=') && (c[9] == '/' || c[9] == '\\') && len(c) >= 20 {
 
-		symTable := rune(c[9])
-		symCode := rune(c[19])
+		pr := regexp.MustCompile(`[\=\!]([\d\.\s]{7})([NSns])(.)([\d\.\s]{8})([EWew])(.)(.*)$`)
 
-		la1, err := strconv.ParseFloat(c[1:3], 64)
-		if err != nil {
-			return p, symTable, symCode, c, err
+		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+
+			remains := matches[7]
+
+			symTable := rune(matches[3][0])
+			symCode := rune(matches[6][0])
+
+			la1, err := strconv.ParseFloat(matches[1][0:2], 64)
+			if err != nil {
+				return p, symTable, symCode, remains, err
+			}
+			la2, err := strconv.ParseFloat(matches[1][2:7], 64)
+			if err != nil {
+				return p, symTable, symCode, remains, err
+			}
+
+			lat := la1 + la2/60
+			if matches[2][0] == 'S' {
+				lat = 0 - lat
+			}
+
+			lo1, err := strconv.ParseFloat(matches[4][0:3], 64)
+			if err != nil {
+				return p, symTable, symCode, remains, err
+			}
+			lo2, err := strconv.ParseFloat(matches[4][3:8], 64)
+			if err != nil {
+				return p, symTable, symCode, remains, err
+			}
+
+			lon := lo1 + lo2/60
+
+			if matches[5][0] == 'W' {
+				lon = 0 - lon
+			}
+
+			p.Lat = lat
+			p.Lon = lon
+
+			return p, symTable, symCode, remains, nil
+
 		}
-		la2, err := strconv.ParseFloat(c[3:7], 64)
-		if err != nil {
-			return p, symTable, symCode, c, err
-		}
 
-		lat := la1 + la2/60
-		if c[8] == 'S' {
-			lat = 0 - lat
-		}
-
-		lo1, err := strconv.ParseFloat(c[10:13], 64)
-		if err != nil {
-			return p, symTable, symCode, c, err
-		}
-		lo2, err := strconv.ParseFloat(c[13:18], 64)
-		if err != nil {
-			return p, symTable, symCode, c, err
-		}
-
-		lon := lo1 + lo2/60
-
-		if c[18] == 'W' {
-			lon = 0 - lon
-		}
-
-		p.Lat = lat
-		p.Lon = lon
-
-		if len(c) > 20 {
-			c = c[19:]
-		}
-
-		return p, symTable, symCode, c, nil
-	} else {
-		return p, ' ', ' ', c, nil
 	}
+
+	return p, ' ', ' ', c, nil
+
 }
