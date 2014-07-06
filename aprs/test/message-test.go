@@ -61,7 +61,7 @@ func main() {
 		Text:      "Testing 1 2 3",
 	}
 
-	ms, err := aprs.CreateMessage(&m)
+	ms, err := aprs.CreateMessage(m)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
