@@ -28,12 +28,10 @@ func main() {
 	}
 
 	tr := aprs.CreateUncompressedTelemetryReport(&s)
-	fmt.Printf("Standard telemetry structure: %v\n", tr)
-	p, err := aprs.ParseUncompressedTelemetryReport(tr)
-	if err != nil {
-		log.Fatalln("Error:", err)
-	}
-	fmt.Printf("Standard telemetry report%v\n", p)
+	fmt.Printf("Standard telemetry: %v\n", tr)
+	p, remains := aprs.ParseUncompressedTelemetryReport(tr)
+	fmt.Printf("Parsed standard telemetry report%+v\n", p)
+	fmt.Printf("Remains: %v\n", remains)
 
 	fmt.Printf("Compressed telemetry structure: %+v\n", c)
 	ctr, err := aprs.CreateCompressedTelemetryReport(&c)
