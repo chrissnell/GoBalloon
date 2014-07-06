@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/geospatial"
 	"math"
+	"regexp"
 	"strconv"
 )
 
@@ -86,38 +87,63 @@ func CreateCompressedPositionReport(p *geospatial.Point, symTable, symCode rune)
 	return buffer.String()
 }
 
-func DecodeCompressedPositionReport(c string) (*geospatial.Point, rune, rune, string, error) {
-	var err error
-	s := []byte(c)
+func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, string, error) {
+	// Example:    =/5L!!<*e7OS]S
 
-	p := &geospatial.Point{}
+	var err error
+	var matches []string
+
+	p := geospatial.Point{}
 
 	if (c[0] == '!' || c[0] == '=') && (c[1] == '/' || c[1] == '\\') {
 
-		symTable := rune(s[1])
-		symCode := rune(s[10])
+		pr := regexp.MustCompile(`[=!]([\\\/])(.{4})(.{4})(.)(..)(.)(.*)$`)
 
-		p.Lat, err = DecodeBase91Lat(s[2:6])
-		if err != nil {
-			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
+		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+
+			symTable := rune(matches[1][0])
+			symCode := rune(matches[4][0])
+
+			p.Lat, err = DecodeBase91Lat([]byte(matches[2]))
+			if err != nil {
+				return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
+			}
+
+			p.Lon, err = DecodeBase91Lon([]byte(matches[3]))
+			if err != nil {
+				return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
+			}
+
+			// A space in this position indicates that the report includes no altitude, speed/course, or radio range.
+			if matches[5][0] != ' ' {
+
+				// First we look at the Compression Byte ("T" in the spec) and check for a GGA NMEA source.
+				// If the GGA bits are set, we decode an altitude reading.  Otherwise, try to decode a course/
+				// speed reading or a radio range reading
+				if (byte(matches[6][0])-33)&0x18 == 0x10 {
+					// This report has an encoded altitude reading
+					fmt.Println("This has an altitude reading")
+					p.Altitude, err = DecodeBase91Altitude([]byte(matches[5]))
+					if err != nil {
+						return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
+					}
+				} else if (byte(matches[5][0])-33) >= 0 && (byte(matches[5][0])-33) <= 89 {
+					fmt.Println("This report has an encoded course/speed reading.")
+					p.Heading, p.Speed, err = DecodeBase91CourseSpeed([]byte(matches[5]))
+				} else if matches[5][0] == '{' {
+					fmt.Println("This report has an encoded radio range reading.")
+					p.RadioRange = DecodeBase91RadioRange(byte(matches[5][1]))
+				}
+			}
+
+			// Store the unmatched remains back into c
+			c = matches[7]
+
+			return p, symTable, symCode, c, nil
+
 		}
-
-		p.Lon, err = DecodeBase91Lon(s[6:10])
-		if err != nil {
-			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
-		}
-
-		p.Altitude, err = DecodeBase91Altitude(s[11:13])
-		if err != nil {
-			return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
-		}
-
-		c = c[13:]
-
-		return p, symTable, symCode, c, nil
-	} else {
-		return p, ' ', ' ', c, nil
 	}
+	return p, ' ', ' ', c, nil
 }
 
 func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
