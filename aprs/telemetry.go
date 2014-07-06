@@ -37,7 +37,7 @@ func CreateUncompressedTelemetryReport(r *StdTelemetryReport) string {
 	// First byte in our telemetry report is the data type indicator.
 	// The rune 'T' indicates a standard APRS telemetry report with
 	// five analog values and one digital value
-	return fmt.Sprintf("T%03v,%03v,%03v,%03v,%03v,%03v,%08b", r.Sequence, r.A1, r.A2, r.A3, r.A4, r.A5, r.Digital)
+	return fmt.Sprintf("T#%03v,%03v,%03v,%03v,%03v,%03v,%08b", r.Sequence, r.A1, r.A2, r.A3, r.A4, r.A5, r.Digital)
 }
 
 func CreateCompressedTelemetryReport(r *CompressedTelemetryReport) (string, error) {
@@ -99,9 +99,10 @@ func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
 	var matches []string
 
 	r := StdTelemetryReport{}
+	var remains string
 
 	tr := regexp.MustCompile(`T#([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([01]{8})(.*)$`)
-	//fmt.Printf("matches: %v\n", tr.FindStringSubmatch(s))
+
 	matches = tr.FindStringSubmatch(s)
 
 	if matches = tr.FindStringSubmatch(s); len(matches) >= 6 {
@@ -116,9 +117,11 @@ func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
 		r.Digital = convertBinaryStringToUint8(matches[7])
 		r := tr.ReplaceAllString(s, "")
 		fmt.Printf("Remains: %v\n", r)
+
+		remains = matches[8]
 	}
 
-	return r, s
+	return r, remains
 }
 
 func convertBinaryStringToUint8(a string) byte {
