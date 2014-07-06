@@ -49,6 +49,7 @@ func main() {
 
 	for {
 
+		fmt.Println("-------------------------------------------")
 		msg, err := is.Next()
 
 		ad := aprs.ParsePacket(&msg)
@@ -58,6 +59,9 @@ func main() {
 			ad.Message.Sender = msg.Source
 		}
 
+		if ad.Position.Lat != 0 {
+			fmt.Printf("Decoded APRS Data: %+v\n", ad)
+		}
 		if ad.Message.Recipient.String() == "NW5W-1" {
 			fmt.Printf("Incoming message for NW5W-1: %+v\n", ad)
 			fmt.Printf("%+v\n", msg)
@@ -70,6 +74,8 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error: %v\n", err)
 		}
+
+		fmt.Println("-------------------------------------------")
 
 	}
 

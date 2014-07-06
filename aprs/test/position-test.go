@@ -16,10 +16,12 @@ func main() {
 	position := aprs.CreateCompressedPositionReport(p, '/', 'O')
 	fmt.Printf("Compressed position: %v\n", position)
 
-	dp, st, sc, err := aprs.DecodeCompressedPositionReport(position)
+	dp, st, sc, remains, err := aprs.DecodeCompressedPositionReport(position)
 
 	fmt.Printf("Decoded compressed position: %+v\n", dp)
-	fmt.Printf("st: %v   sc: %v\n", st, sc)
+	fmt.Printf("symtable: %v   symcode: %v\n", st, sc)
+	fmt.Printf("remains: %v\n", remains)
+
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	}
@@ -30,11 +32,12 @@ func main() {
 	}
 	fmt.Printf("Uncompressed position: %v\n", u_pos)
 
-	upos_dec, sym_t, sym_c, err := aprs.DecodeUncompressedPositionReportWithoutTimestamp(u_pos)
+	upos_dec, sym_t, sym_c, remains, err := aprs.DecodeUncompressedPositionReportWithoutTimestamp(u_pos)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 	} else {
 		fmt.Printf("Decoded uncompressed position:  %+v\n", upos_dec)
 		fmt.Printf("symtable: %v   symcode: %v\n", sym_t, sym_c)
+		fmt.Printf("remains: %v\n", remains)
 	}
 }
