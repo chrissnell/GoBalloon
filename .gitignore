@@ -13,3 +13,5 @@ aprs/test/position-test
 aprs/test/message-test
 
 aprsis/test/aprsis-client
+
+aprs/test/telemetry-test
