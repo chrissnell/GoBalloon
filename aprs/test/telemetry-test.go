@@ -41,10 +41,11 @@ func main() {
 
 	fmt.Printf("Compressed telemetry report: %v\n", ctr)
 
-	pc, err := aprs.ParseCompressedTelemetryReport(ctr)
+	pc, remains, err := aprs.ParseCompressedTelemetryReport(ctr)
 	if err != nil {
 		log.Fatalln("Error:", err)
 	}
 	fmt.Printf("Decompressed compressed telemetry report: %+v\n", pc)
+	fmt.Printf("Remains: %v\n", remains)
 
 }
