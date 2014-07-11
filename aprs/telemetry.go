@@ -99,9 +99,10 @@ func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
 	var matches []string
 
 	r := StdTelemetryReport{}
-	var remains string
 
 	tr := regexp.MustCompile(`T#([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([\d.]{3}),([01]{8})(.*)$`)
+
+	remains := tr.ReplaceAllString(s, "")
 
 	matches = tr.FindStringSubmatch(s)
 
@@ -115,10 +116,6 @@ func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
 		r.A5, _ = strconv.ParseFloat(matches[6], 64)
 
 		r.Digital = convertBinaryStringToUint8(matches[7])
-		r := tr.ReplaceAllString(s, "")
-		fmt.Printf("Remains: %v\n", r)
-
-		remains = matches[8]
 	}
 
 	return r, remains
@@ -155,61 +152,62 @@ func convertBinaryStringToUint8(a string) byte {
 	return b
 }
 
-func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, error) {
+func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, string, error) {
 
 	var err error
 
 	r := &CompressedTelemetryReport{}
 
-	tbs := []byte(s)
+	pr := regexp.MustCompile(`\|(..)(..)(..)(..)(..)(..)(..)\|(.*)$`)
 
-	if len(s) != 16 {
-		err := fmt.Errorf("Compressed telemetry message has incorrect length.  Should be 16, is %v.\n", len(s))
-		return nil, err
+	remains := pr.ReplaceAllString(s, "")
+
+	if matches := pr.FindStringSubmatch(s); len(matches) > 0 {
+
+		r.Sequence, err = DecodeBase91Telemetry([]byte(matches[0]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		r.A1, err = DecodeBase91Telemetry([]byte(matches[1]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		r.A2, err = DecodeBase91Telemetry([]byte(matches[2]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		r.A3, err = DecodeBase91Telemetry([]byte(matches[3]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		r.A4, err = DecodeBase91Telemetry([]byte(matches[4]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		r.A5, err = DecodeBase91Telemetry([]byte(matches[5]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+
+		dtm, err := DecodeBase91Telemetry([]byte(matches[6]))
+		if err != nil {
+			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
+			return nil, remains, err
+		}
+		r.Digital = byte(dtm)
+
 	}
 
-	r.Sequence, err = DecodeBase91Telemetry(tbs[1:3])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	r.A1, err = DecodeBase91Telemetry(tbs[3:5])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	r.A2, err = DecodeBase91Telemetry(tbs[5:7])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	r.A3, err = DecodeBase91Telemetry(tbs[7:9])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	r.A4, err = DecodeBase91Telemetry(tbs[9:11])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	r.A5, err = DecodeBase91Telemetry(tbs[11:13])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-
-	dtm, err := DecodeBase91Telemetry(tbs[13:15])
-	if err != nil {
-		fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-		return nil, err
-	}
-	r.Digital = byte(dtm)
-
-	return r, nil
+	return r, remains, nil
 }

@@ -99,6 +99,8 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 
 		pr := regexp.MustCompile(`[=!]([\\\/])(.{4})(.{4})(.)(..)(.)(.*)$`)
 
+		remains := pr.ReplaceAllString(c, "")
+
 		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
 
 			symTable := rune(matches[1][0])
@@ -106,12 +108,12 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 
 			p.Lat, err = DecodeBase91Lat([]byte(matches[2]))
 			if err != nil {
-				return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
+				return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
 			}
 
 			p.Lon, err = DecodeBase91Lon([]byte(matches[3]))
 			if err != nil {
-				return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
+				return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
 			}
 
 			// A space in this position indicates that the report includes no altitude, speed/course, or radio range.
@@ -125,7 +127,7 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 					fmt.Println("This has an altitude reading")
 					p.Altitude, err = DecodeBase91Altitude([]byte(matches[5]))
 					if err != nil {
-						return p, ' ', ' ', c, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
+						return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
 					}
 				} else if (byte(matches[5][0])-33) >= 0 && (byte(matches[5][0])-33) <= 89 {
 					fmt.Println("This report has an encoded course/speed reading.")
@@ -136,10 +138,7 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 				}
 			}
 
-			// Store the unmatched remains back into c
-			c = matches[7]
-
-			return p, symTable, symCode, c, nil
+			return p, symTable, symCode, remains, nil
 
 		}
 	}
@@ -156,9 +155,9 @@ func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Poin
 
 		pr := regexp.MustCompile(`[\=\!]([\d\.\s]{7})([NSns])(.)([\d\.\s]{8})([EWew])(.)(.*)$`)
 
-		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+		remains := pr.ReplaceAllString(c, "")
 
-			remains := matches[7]
+		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
 
 			symTable := rune(matches[3][0])
 			symCode := rune(matches[6][0])

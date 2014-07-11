@@ -60,9 +60,9 @@ func DecodeMessage(m string) (Message, string, error) {
 	// APRS message regex from Hell.   Looks for the message, optional ACK/REJ, message ID, and whatever else.
 	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?((.+)\{(\w{1,5}$))?(.*)$`)
 
-	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
+	remains := msgregex.ReplaceAllString(m, "")
 
-		m = msgregex.ReplaceAllString(m, "")
+	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
 
 		recipient := strings.TrimSpace(matches[1])
 
@@ -71,7 +71,7 @@ func DecodeMessage(m string) (Message, string, error) {
 			dm.Recipient.Callsign = rparts[0]
 			ssid, err := strconv.ParseUint(rparts[1], 10, 8)
 			if err != nil {
-				return dm, m, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
+				return dm, remains, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
 			}
 			dm.Recipient.SSID = uint8(ssid)
 		} else {
@@ -82,13 +82,13 @@ func DecodeMessage(m string) (Message, string, error) {
 			if strings.ToLower(matches[2][0:3]) == "ack" {
 				dm.ACK = true
 				dm.ID = matches[2][3:]
-				return dm, m, nil
+				return dm, remains, nil
 			}
 
 			if strings.ToLower(matches[2][0:3]) == "rej" {
 				dm.REJ = true
 				dm.ID = matches[2][3:]
-				return dm, m, nil
+				return dm, remains, nil
 			}
 		}
 
@@ -99,10 +99,10 @@ func DecodeMessage(m string) (Message, string, error) {
 		} else {
 			dm.Text = matches[3]
 		}
-		return dm, m, nil
+		return dm, remains, nil
 
 	} else {
-		return dm, m, nil
+		return dm, remains, nil
 	}
 
 }
