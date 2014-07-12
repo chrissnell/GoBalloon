@@ -49,23 +49,33 @@ func main() {
 
 	for {
 
-		fmt.Println("-------------------------------------------")
+		//fmt.Println("-------------------------------------------")
 		msg, err := is.Next()
 
 		ad := aprs.ParsePacket(&msg)
 
-		fmt.Println(msg)
+		//fmt.Printf("msg: %+v\n", msg)
 
 		// If we have a recipient and a sender, add the sender to the APRSData.Message struct
 		if ad.Message.Recipient.Callsign != "" && msg.Source.Callsign != "" {
 			ad.Message.Sender = msg.Source
 		}
 
-		if ad.Position.Lat != 0 {
+		if msg.Source.Callsign == "NW5W" {
+			fmt.Printf("Raw Packet: %+v\n", msg)
 			fmt.Printf("Decoded APRS Data: %+v\n", ad)
+
 		}
 
-		if ad.Message.Recipient.String() != "" {
+		// if ad.Position.Lat != 0 {
+		// 	fmt.Printf("Decoded APRS Data: %+v\n", ad)
+		// }
+
+		// if ad.Message.Recipient.String() != "" {
+		// 	fmt.Printf("%+v\n", ad)
+		// }
+
+		if ad.StandardTelemetry.A1 != 0 || ad.CompressedTelemetry.A1 != 0 {
 			fmt.Printf("%+v\n", ad)
 		}
 
@@ -82,7 +92,7 @@ func main() {
 			fmt.Printf("Error: %v\n", err)
 		}
 
-		fmt.Println("-------------------------------------------")
+		//fmt.Println("-------------------------------------------")
 
 	}
 

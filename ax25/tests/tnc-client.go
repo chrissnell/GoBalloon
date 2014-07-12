@@ -47,22 +47,22 @@ func main() {
 	c := aprs.CompressedTelemetryReport{
 		A1:       7714,
 		A2:       4,
-		A3:       3,
+		A3:       7,
 		A4:       3006,
 		A5:       429,
 		Digital:  51,
-		Sequence: 17,
+		Sequence: 24,
 	}
 
-	ctr, err := aprs.CreateCompressedTelemetryReport(&c)
+	ctr, err := aprs.CreateCompressedTelemetryReport(c)
 	if err != nil {
 		log.Fatalln("Could not create compressed telemetry report: ", err)
 	}
 
 	point := geospatial.NewPoint()
-	point.Lat = 47.2111
+	point.Lat = 47.2101
 	point.Lon = -122.4818
-	point.Altitude = 217
+	point.Altitude = 216
 
 	position := aprs.CreateCompressedPositionReport(point, '/', 'O')
 	body := fmt.Sprint(position, "GoBalloon-Test", ctr)
