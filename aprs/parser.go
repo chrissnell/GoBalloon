@@ -60,6 +60,10 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 		}
 	}
 
+	if len(d) >= 16 {
+		ad.CompressedTelemetry, p.Body, _ = ParseCompressedTelemetryReport(p.Body)
+	}
+
 	ad.Comment = p.Body
 	return ad
 
