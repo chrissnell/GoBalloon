@@ -8,7 +8,7 @@ package aprs
 import (
 	_ "bytes"
 	_ "errors"
-	"fmt"
+	_ "fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
 	_ "strconv"
@@ -36,11 +36,13 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 		if d[0] == byte('!') || d[0] == byte('=') {
 			// Compressed reports will have a symbol table ID in their second byte
 			if d[1] == byte('/') || d[1] == byte('\\') {
-				fmt.Printf("- - - - - > DECODING COMPRESSED POSITION REPORT  ----> %v\n", p.Body)
 				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeCompressedPositionReport(p.Body)
 			} else {
 				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithoutTimestamp(p.Body)
 			}
+		} else if d[0] == byte('/') || d[0] == byte('@') {
+			// This looks like an uncompressed position report with a timestamp
+			ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithTimestamp(p.Body)
 		}
 	}
 
