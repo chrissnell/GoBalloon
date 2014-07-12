@@ -1,5 +1,5 @@
 // GoBalloon
-// geospatial.go - Functions for balloon-related geospatial calculations
+// geospatial.go - Functions for APRS-related geospatial calculations
 //
 // (c) 2014, Christopher Snell
 
@@ -8,15 +8,18 @@ package geospatial
 import (
 	"fmt"
 	"math"
+	"time"
 )
 
 type Point struct {
-	Lat        float64
-	Lon        float64
-	Altitude   float64
-	Speed      float32
-	Heading    uint16
-	RadioRange float32
+	Lat            float64
+	Lon            float64
+	Altitude       float64
+	Speed          float32
+	Heading        uint16
+	RadioRange     float32
+	MessageCapable bool
+	Time           time.Time
 }
 
 func NewPoint() *Point {
