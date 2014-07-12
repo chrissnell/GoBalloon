@@ -40,4 +40,13 @@ func main() {
 		fmt.Printf("symtable: %v   symcode: %v\n", sym_t, sym_c)
 		fmt.Printf("remains: %v\n", remains)
 	}
+
+	upos_time_dec, sym_t, sym_c, remains, err := aprs.DecodeUncompressedPositionReportWithTimestamp("@092345z4903.50N/07201.75W>")
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	} else {
+		fmt.Printf("Decoded uncompressed position with timestamp:  %+v\n", upos_time_dec)
+		fmt.Printf("symtable: %v   symcode: %v\n", sym_t, sym_c)
+		fmt.Printf("remains: %v\n", remains)
+	}
 }

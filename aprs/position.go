@@ -12,6 +12,7 @@ import (
 	"math"
 	"regexp"
 	"strconv"
+	"time"
 )
 
 func CreateUncompressedPositionReportWithoutTimestamp(p *geospatial.Point, symTable, symCode rune, messaging bool) (string, error) {
@@ -101,6 +102,8 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 
 		remains := pr.ReplaceAllString(c, "")
 
+		p.Time = time.Now()
+
 		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
 
 			symTable := rune(matches[1][0])
@@ -151,53 +154,149 @@ func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Poin
 	var matches []string
 	p := geospatial.Point{}
 
-	if (c[0] == '!' || c[0] == '=') && (c[9] == '/' || c[9] == '\\') && len(c) >= 20 {
+	if len(c) >= 20 {
+		if (c[0] == '!' || c[0] == '=') && (c[9] == '/' || c[9] == '\\') {
 
-		pr := regexp.MustCompile(`[\=\!]([\d\.\s]{7})([NSns])(.)([\d\.\s]{8})([EWew])(.)(.*)$`)
+			pr := regexp.MustCompile(`([\=\!])([\d\.\s]{7})([NSns])(.)([\d\.\s]{8})([EWew])(.)(.*)$`)
 
-		remains := pr.ReplaceAllString(c, "")
+			remains := pr.ReplaceAllString(c, "")
 
-		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+			p.Time = time.Now()
 
-			symTable := rune(matches[3][0])
-			symCode := rune(matches[6][0])
+			if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
 
-			la1, err := strconv.ParseFloat(matches[1][0:2], 64)
-			if err != nil {
-				return p, symTable, symCode, remains, err
+				if matches[1][0] == '=' {
+					p.MessageCapable = true
+				}
+
+				symTable := rune(matches[4][0])
+				symCode := rune(matches[7][0])
+
+				la1, err := strconv.ParseFloat(matches[2][0:2], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+				la2, err := strconv.ParseFloat(matches[2][2:7], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+
+				lat := la1 + la2/60
+				if matches[3][0] == 'S' {
+					lat = 0 - lat
+				}
+
+				lo1, err := strconv.ParseFloat(matches[5][0:3], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+				lo2, err := strconv.ParseFloat(matches[5][3:8], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+
+				lon := lo1 + lo2/60
+
+				if matches[6][0] == 'W' {
+					lon = 0 - lon
+				}
+
+				p.Lat = lat
+				p.Lon = lon
+
+				return p, symTable, symCode, remains, nil
+
 			}
-			la2, err := strconv.ParseFloat(matches[1][2:7], 64)
-			if err != nil {
-				return p, symTable, symCode, remains, err
-			}
-
-			lat := la1 + la2/60
-			if matches[2][0] == 'S' {
-				lat = 0 - lat
-			}
-
-			lo1, err := strconv.ParseFloat(matches[4][0:3], 64)
-			if err != nil {
-				return p, symTable, symCode, remains, err
-			}
-			lo2, err := strconv.ParseFloat(matches[4][3:8], 64)
-			if err != nil {
-				return p, symTable, symCode, remains, err
-			}
-
-			lon := lo1 + lo2/60
-
-			if matches[5][0] == 'W' {
-				lon = 0 - lon
-			}
-
-			p.Lat = lat
-			p.Lon = lon
-
-			return p, symTable, symCode, remains, nil
 
 		}
+	}
 
+	return p, ' ', ' ', c, nil
+
+}
+
+func DecodeUncompressedPositionReportWithTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
+	// Example:   @092345z4903.50N/07201.75W>
+
+	var matches []string
+	p := geospatial.Point{}
+
+	if len(c) >= 27 {
+		if (c[0] == '/' || c[0] == '@') && (c[16] == '/' || c[16] == '\\') {
+
+			pr := regexp.MustCompile(`([\/\@])(\d{6})(.)([\d\.\s]{7})([NSns])(.)([\d\.\s]{8})([EWew])(.)(.*)$`)
+
+			remains := pr.ReplaceAllString(c, "")
+
+			if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+
+				if matches[1][0] == '@' {
+					p.MessageCapable = true
+				}
+
+				switch matches[3][0] {
+				case 'z':
+					day, _ := strconv.ParseInt(matches[2][0:2], 10, 0)
+					hours, _ := strconv.ParseInt(matches[2][2:4], 10, 0)
+					minutes, _ := strconv.ParseInt(matches[2][4:6], 10, 0)
+					now := time.Now()
+					p.Time = time.Date(now.Year(), now.Month(), int(day), int(hours), int(minutes), 0, 0, time.UTC)
+				case '/':
+					day, _ := strconv.ParseInt(matches[2][0:2], 10, 0)
+					hours, _ := strconv.ParseInt(matches[2][2:4], 10, 0)
+					minutes, _ := strconv.ParseInt(matches[2][4:6], 10, 0)
+					now := time.Now()
+					p.Time = time.Date(now.Year(), now.Month(), int(day), int(hours), int(minutes), 0, 0, time.Local)
+				case 'h':
+					hours, _ := strconv.ParseInt(matches[2][0:2], 10, 0)
+					minutes, _ := strconv.ParseInt(matches[2][2:4], 10, 0)
+					seconds, _ := strconv.ParseInt(matches[2][4:6], 10, 0)
+					now := time.Now()
+					p.Time = time.Date(now.Year(), now.Month(), now.Day(), int(hours), int(minutes), int(seconds), 0, time.UTC)
+				default:
+					p.Time = time.Now()
+				}
+
+				symTable := rune(matches[6][0])
+				symCode := rune(matches[9][0])
+
+				la1, err := strconv.ParseFloat(matches[4][0:2], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+				la2, err := strconv.ParseFloat(matches[4][2:7], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+
+				lat := la1 + la2/60
+				if matches[5][0] == 'S' {
+					lat = 0 - lat
+				}
+
+				lo1, err := strconv.ParseFloat(matches[7][0:3], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+				lo2, err := strconv.ParseFloat(matches[7][3:8], 64)
+				if err != nil {
+					return p, symTable, symCode, remains, err
+				}
+
+				lon := lo1 + lo2/60
+
+				if matches[8][0] == 'W' {
+					lon = 0 - lon
+				}
+
+				p.Lat = lat
+				p.Lon = lon
+
+				return p, symTable, symCode, remains, nil
+
+			}
+
+		}
 	}
 
 	return p, ' ', ' ', c, nil
