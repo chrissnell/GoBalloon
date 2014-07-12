@@ -54,6 +54,8 @@ func main() {
 
 		ad := aprs.ParsePacket(&msg)
 
+		fmt.Println(msg)
+
 		// If we have a recipient and a sender, add the sender to the APRSData.Message struct
 		if ad.Message.Recipient.Callsign != "" && msg.Source.Callsign != "" {
 			ad.Message.Sender = msg.Source
@@ -62,6 +64,11 @@ func main() {
 		if ad.Position.Lat != 0 {
 			fmt.Printf("Decoded APRS Data: %+v\n", ad)
 		}
+
+		if ad.Message.Recipient.String() != "" {
+			fmt.Printf("%+v\n", msg)
+		}
+
 		if ad.Message.Recipient.String() == "NW5W-1" {
 			fmt.Printf("Incoming message for NW5W-1: %+v\n", ad)
 			fmt.Printf("%+v\n", msg)
