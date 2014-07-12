@@ -104,6 +104,10 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 
 	if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
 
+		if len(matches[7]) > 0 {
+			remains = matches[7]
+		}
+
 		symTable := rune(matches[1][0])
 		symCode := rune(matches[4][0])
 
@@ -125,16 +129,13 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 			// speed reading or a radio range reading
 			if (byte(matches[6][0])-33)&0x18 == 0x10 {
 				// This report has an encoded altitude reading
-				fmt.Println("This has an altitude reading")
 				p.Altitude, err = DecodeBase91Altitude([]byte(matches[5]))
 				if err != nil {
 					return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
 				}
 			} else if (byte(matches[5][0])-33) >= 0 && (byte(matches[5][0])-33) <= 89 {
-				fmt.Println("This report has an encoded course/speed reading.")
 				p.Heading, p.Speed, err = DecodeBase91CourseSpeed([]byte(matches[5]))
 			} else if matches[5][0] == '{' {
-				fmt.Println("This report has an encoded radio range reading.")
 				p.RadioRange = DecodeBase91RadioRange(byte(matches[5][1]))
 			}
 		}
@@ -142,7 +143,7 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 		return p, symTable, symCode, remains, nil
 
 	}
-	return p, ' ', ' ', c, nil
+	return p, ' ', ' ', remains, nil
 }
 
 func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
@@ -160,6 +161,10 @@ func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Poin
 		p.Time = time.Now()
 
 		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+
+			if len(matches[8]) > 0 {
+				remains = matches[8]
+			}
 
 			if matches[1][0] == '=' {
 				p.MessageCapable = true
@@ -223,6 +228,10 @@ func DecodeUncompressedPositionReportWithTimestamp(c string) (geospatial.Point, 
 		remains := pr.ReplaceAllString(c, "")
 
 		if matches = pr.FindStringSubmatch(c); len(matches) > 0 {
+
+			if len(matches[10]) > 0 {
+				remains = matches[10]
+			}
 
 			if matches[1][0] == '@' {
 				p.MessageCapable = true

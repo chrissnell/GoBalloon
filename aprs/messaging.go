@@ -64,6 +64,10 @@ func DecodeMessage(m string) (Message, string, error) {
 
 	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
 
+		if len(matches[6]) > 0 {
+			remains = matches[6]
+		}
+
 		recipient := strings.TrimSpace(matches[1])
 
 		if strings.Contains(recipient, "-") {

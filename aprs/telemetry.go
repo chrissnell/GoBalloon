@@ -33,14 +33,14 @@ type CompressedTelemetryReport struct {
 	Digital  byte
 }
 
-func CreateUncompressedTelemetryReport(r *StdTelemetryReport) string {
+func CreateUncompressedTelemetryReport(r StdTelemetryReport) string {
 	// First byte in our telemetry report is the data type indicator.
 	// The rune 'T' indicates a standard APRS telemetry report with
 	// five analog values and one digital value
 	return fmt.Sprintf("T#%03v,%03v,%03v,%03v,%03v,%03v,%08b", r.Sequence, r.A1, r.A2, r.A3, r.A4, r.A5, r.Digital)
 }
 
-func CreateCompressedTelemetryReport(r *CompressedTelemetryReport) (string, error) {
+func CreateCompressedTelemetryReport(r CompressedTelemetryReport) (string, error) {
 	var buffer bytes.Buffer
 
 	buffer.WriteRune('|')
@@ -107,6 +107,11 @@ func ParseUncompressedTelemetryReport(s string) (StdTelemetryReport, string) {
 	matches = tr.FindStringSubmatch(s)
 
 	if matches = tr.FindStringSubmatch(s); len(matches) >= 6 {
+
+		if len(matches[8]) > 0 {
+			remains = matches[8]
+		}
+
 		seq, _ := strconv.ParseUint(matches[1], 10, 16)
 		r.Sequence = uint16(seq)
 		r.A1, _ = strconv.ParseFloat(matches[2], 64)
@@ -152,11 +157,11 @@ func convertBinaryStringToUint8(a string) byte {
 	return b
 }
 
-func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, string, error) {
+func ParseCompressedTelemetryReport(s string) (CompressedTelemetryReport, string, error) {
 
 	var err error
 
-	r := &CompressedTelemetryReport{}
+	r := CompressedTelemetryReport{}
 
 	pr := regexp.MustCompile(`\|(..)(..)(..)(..)(..)(..)(..)\|(.*)$`)
 
@@ -164,46 +169,52 @@ func ParseCompressedTelemetryReport(s string) (*CompressedTelemetryReport, strin
 
 	if matches := pr.FindStringSubmatch(s); len(matches) > 0 {
 
+		if len(matches[7]) > 0 {
+			remains = matches[7]
+		}
+
+		fmt.Println("- - - - - - - - - - > Compressed Telemetry < - - - - - - - - - - -")
+
 		r.Sequence, err = DecodeBase91Telemetry([]byte(matches[0]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		r.A1, err = DecodeBase91Telemetry([]byte(matches[1]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		r.A2, err = DecodeBase91Telemetry([]byte(matches[2]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		r.A3, err = DecodeBase91Telemetry([]byte(matches[3]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		r.A4, err = DecodeBase91Telemetry([]byte(matches[4]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		r.A5, err = DecodeBase91Telemetry([]byte(matches[5]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 
 		dtm, err := DecodeBase91Telemetry([]byte(matches[6]))
 		if err != nil {
 			fmt.Printf("Error decoding Base91 telemetry: %v\n", err)
-			return nil, remains, err
+			return r, remains, err
 		}
 		r.Digital = byte(dtm)
 
