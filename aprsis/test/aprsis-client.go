@@ -66,7 +66,7 @@ func main() {
 		}
 
 		if ad.Message.Recipient.String() != "" {
-			fmt.Printf("%+v\n", msg)
+			fmt.Printf("%+v\n", ad)
 		}
 
 		if ad.Message.Recipient.String() == "NW5W-1" {
