@@ -9,7 +9,7 @@ Initial work has been focused on making the communication and telemetry systems 
 
 * NMEA GPS processing / gpsd integration
 * AX.25/KISS packet encoding and decoding over local serial line and TCP
-* APRS position reports encoding and decoding (compressed and uncompressed formats)
+* APRS position reports encoding and decoding (compressed and uncompressed, with and without timestamps)
 * APRS telemetry reports encoding and decoding (compressed and uncompressed)
 * APRS messaging
 * APRS-IS client (ganked from @dustin)
