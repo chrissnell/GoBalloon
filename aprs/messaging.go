@@ -58,11 +58,18 @@ func DecodeMessage(m string) (Message, string, error) {
 	}
 
 	// APRS message regex from Hell.   Looks for the message, optional ACK/REJ, message ID, and whatever else.
-	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?((.+)\{(\w{1,5}$))?(.*)$`)
+	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?((.+)\{(\w{1,5}).*$)?(.*)$`)
 
 	remains := msgregex.ReplaceAllString(m, "")
 
 	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
+
+		// For debugging odd messages...
+		// i := 0
+		// for _, v := range matches {
+		// 	fmt.Printf("[%v] ---> %v\n", i, v)
+		// 	i++
+		// }
 
 		if len(matches[6]) > 0 {
 			remains = matches[6]
@@ -101,7 +108,7 @@ func DecodeMessage(m string) (Message, string, error) {
 			dm.ID = matches[5]
 			dm.Text = matches[4]
 		} else {
-			dm.Text = matches[3]
+			dm.Text = matches[6]
 		}
 		return dm, remains, nil
 
