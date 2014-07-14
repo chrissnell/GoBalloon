@@ -8,9 +8,9 @@ package aprs
 import (
 	_ "bytes"
 	_ "errors"
-	_ "fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
+	"log"
 	_ "strconv"
 	_ "strings"
 )
@@ -27,6 +27,8 @@ type APRSData struct {
 
 func ParsePacket(p *ax25.APRSPacket) *APRSData {
 
+	var err error
+
 	ad := &APRSData{}
 	d := []byte(p.Body)
 
@@ -36,13 +38,24 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 		if d[0] == byte('!') || d[0] == byte('=') {
 			// Compressed reports will have a symbol table ID in their second byte
 			if d[1] == byte('/') || d[1] == byte('\\') {
-				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeCompressedPositionReport(p.Body)
+				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, err = DecodeCompressedPositionReport(p.Body)
+				if err != nil {
+					log.Printf("Error decoding compressed position report: %v\n", err)
+				}
+
 			} else {
-				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithoutTimestamp(p.Body)
+				ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, err = DecodeUncompressedPositionReportWithoutTimestamp(p.Body)
+				if err != nil {
+					log.Printf("Error decoding uncompressed position report without timestamp: %v\n", err)
+				}
+
 			}
 		} else if d[0] == byte('/') || d[0] == byte('@') {
 			// This looks like an uncompressed position report with a timestamp
-			ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, _ = DecodeUncompressedPositionReportWithTimestamp(p.Body)
+			ad.Position, ad.SymbolTable, ad.SymbolCode, p.Body, err = DecodeUncompressedPositionReportWithTimestamp(p.Body)
+			if err != nil {
+				log.Printf("Error decoding uncompressed position report without timestamp: %v\n", err)
+			}
 		}
 	}
 
@@ -56,12 +69,20 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 	// Messages have colons at the 1st and 11th bytes
 	if len(d) >= 11 {
 		if d[0] == ':' || d[10] == ':' {
-			ad.Message, p.Body, _ = DecodeMessage(p.Body)
+			ad.Message, p.Body, err = DecodeMessage(p.Body)
+			if err != nil {
+				log.Printf("Error decoding message: %v\n", err)
+			}
+			ad.Message.Sender = p.Source
 		}
 	}
 
 	if len(d) >= 16 {
-		ad.CompressedTelemetry, p.Body, _ = ParseCompressedTelemetryReport(p.Body)
+		ad.CompressedTelemetry, p.Body, err = ParseCompressedTelemetryReport(p.Body)
+		if err != nil {
+			log.Printf("Error decoding compressed telemetry report: %v\n", err)
+		}
+
 	}
 
 	ad.Comment = p.Body
