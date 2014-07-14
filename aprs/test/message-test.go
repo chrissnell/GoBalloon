@@ -25,7 +25,7 @@ func main() {
 
 	psource := ax25.APRSAddress{
 		Callsign: "NW5W",
-		SSID:     7,
+		SSID:     1,
 	}
 
 	pdest := ax25.APRSAddress{
@@ -46,19 +46,19 @@ func main() {
 
 	sender := ax25.APRSAddress{
 		Callsign: "NW5W",
-		SSID:     7,
+		SSID:     1,
 	}
 
 	recipient := ax25.APRSAddress{
 		Callsign: "NW5W",
-		SSID:     1,
+		SSID:     7,
 	}
 
 	m := aprs.Message{
 		Sender:    sender,
 		Recipient: recipient,
 		ID:        "001",
-		Text:      "Testing 1 2 3",
+		Text:      "Testing balloon coms",
 	}
 
 	ms, err := aprs.CreateMessage(m)
