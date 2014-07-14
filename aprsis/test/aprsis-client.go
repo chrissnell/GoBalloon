@@ -61,19 +61,19 @@ func main() {
 			ad.Message.Sender = msg.Source
 		}
 
-		if msg.Source.Callsign == "NW5W" {
-			fmt.Printf("Raw Packet: %+v\n", msg)
-			fmt.Printf("Decoded APRS Data: %+v\n", ad)
+		// if msg.Source.Callsign == "NW5W" {
+		// 	fmt.Printf("Raw Packet: %+v\n", msg)
+		// 	fmt.Printf("Decoded APRS Data: %+v\n", ad)
 
-		}
+		// }
 
 		// if ad.Position.Lat != 0 {
 		// 	fmt.Printf("Decoded APRS Data: %+v\n", ad)
 		// }
 
-		// if ad.Message.Recipient.String() != "" {
-		// 	fmt.Printf("%+v\n", ad)
-		// }
+		if ad.Message.Recipient.String() != "" {
+			fmt.Printf("%+v\n", ad)
+		}
 
 		if ad.StandardTelemetry.A1 != 0 || ad.CompressedTelemetry.A1 != 0 {
 			fmt.Printf("%+v\n", ad)
