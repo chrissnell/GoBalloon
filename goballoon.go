@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 )
 
@@ -22,6 +23,9 @@ var (
 	remotegps       *string
 	remotetnc       *string
 	localtncport    *string
+	mycall          *string
+	myssid          *string
+	balloonAddr     ax25.APRSAddress
 )
 
 func main() {
@@ -29,6 +33,8 @@ func main() {
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
 	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
+	mycall = flag.String("mycall", "", "Balloon Callsign")
+	myssid = flag.String("myssid", "", "Balloon SSID")
 
 	flag.Parse()
 
@@ -38,21 +44,19 @@ func main() {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
 	}
 
+	if len(*mycall) == 0 {
+		log.Fatalln("Must provide a balloon callsign.  Use -h for help.")
+	}
+
+	balloonAddr.Callsign = *mycall
+	ssidInt, _ := strconv.Atoi(*myssid)
+	balloonAddr.SSID = uint8(ssidInt)
+
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
-	aprssource := ax25.APRSAddress{
-		Callsign: "NW5W",
-		SSID:     7,
-	}
-
-	aprsdest := ax25.APRSAddress{
-		Callsign: "APZ001",
-		SSID:     0,
-	}
-
 	go CameraRun()
-	go aprsBeacon(aprssource, aprsdest)
+	go StartAPRS()
 	go GPSRun()
 	<-sc
 	timeToDie <- true
