@@ -25,6 +25,7 @@ var (
 	localtncport    *string
 	mycall          *string
 	myssid          *string
+	debug           *bool
 	balloonAddr     ax25.APRSAddress
 )
 
@@ -35,6 +36,7 @@ func main() {
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 	mycall = flag.String("mycall", "", "Balloon Callsign")
 	myssid = flag.String("myssid", "", "Balloon SSID")
+	debug = flag.Bool("debug", false, "Enable debugging information")
 
 	flag.Parse()
 
@@ -58,6 +60,7 @@ func main() {
 	go CameraRun()
 	go StartAPRS()
 	go GPSRun()
+	go InitiateCutdown()
 	<-sc
 	timeToDie <- true
 	fmt.Println("Shutting down.")
