@@ -13,6 +13,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"strings"
 )
 
 func connectToSerialTNC() (io.ReadWriteCloser, error) {
@@ -61,8 +62,15 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 		// Parse the packet
 		ad := aprs.ParsePacket(&msg)
 
+		// Look for messages addressed to the balloon
 		if ad.Message.Recipient.Callsign == balloonAddr.Callsign && ad.Message.Recipient.SSID == balloonAddr.SSID {
+
 			fmt.Printf("MESSAGE FOR ME: %+v\n", ad)
+
+			if strings.Contains(strings.ToUpper(ad.Message.Text), "CUTDOWN") {
+				log.Println("CUTDOWN command received.  Initiating cutdown.")
+			}
+
 			ack, err := aprs.CreateMessageACK(ad.Message)
 			if err != nil {
 				log.Printf("Error creating APRS message ACK: %v", err)

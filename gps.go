@@ -75,7 +75,9 @@ func readFromGPSD(msg chan string) {
 			line, err := session.reader.ReadString('\n')
 			lines += 1
 			if lines > 100 {
-				fmt.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
+				if *debug {
+					fmt.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
+				}
 				break
 			}
 			if err != nil {
@@ -99,18 +101,24 @@ func processGPSDSentences(msg chan string) {
 				log.Printf("--- ERROR: Could not unmarshal sentence %v\n", err)
 				break
 			}
-			fmt.Println("--- Received a GPS sentence")
+			if *debug {
+				fmt.Println("--- Received a GPS sentence")
+			}
 			if classify.Class == "TPV" {
 				err := json.Unmarshal([]byte(m), &tpv)
 				if err != nil {
 					log.Printf("--- ERROR: Could not unmarshal TPV sentence: %v\n", err)
 					break
 				}
-				fmt.Println("--- TPV sentence received")
+				if *debug {
+					fmt.Println("--- TPV sentence received")
+				}
 				currentPosition.Lon = tpv.Lon
 				currentPosition.Lat = tpv.Lat
 				currentPosition.Altitude = tpv.Alt
-				fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
+				if *debug {
+					fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
+				}
 			}
 		}
 	}
