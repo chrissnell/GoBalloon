@@ -15,7 +15,7 @@ func CameraRun() {
 	fmt.Println("--- runCamera start")
 	for {
 		select {
-		case <-timeToDie:
+		case <-shutdownFlight:
 			fmt.Println("--- Break")
 			break
 		default:
