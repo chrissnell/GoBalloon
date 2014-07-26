@@ -13,7 +13,9 @@ import (
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"strings"
+	"time"
 )
 
 func connectToSerialTNC() (io.ReadWriteCloser, error) {
@@ -47,7 +49,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 	d := ax25.NewDecoder(conn)
 
-	defer conn.Close()
+	//defer conn.Close()
 
 	for {
 
@@ -65,10 +67,9 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 		// Look for messages addressed to the balloon
 		if ad.Message.Recipient.Callsign == balloonAddr.Callsign && ad.Message.Recipient.SSID == balloonAddr.SSID {
 
-			fmt.Printf("MESSAGE FOR ME: %+v\n", ad)
-
 			if strings.Contains(strings.ToUpper(ad.Message.Text), "CUTDOWN") {
 				log.Println("CUTDOWN command received.  Initiating cutdown.")
+				InitiateCutdown()
 			}
 
 			ack, err := aprs.CreateMessageACK(ad.Message)
@@ -82,6 +83,37 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 		}
 
 	}
+}
+
+func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
+
+	var msg aprs.Message
+
+	fmt.Println("aprs_controller::outgoingAPRSEventHandler()")
+
+	for {
+		select {
+		case m := <-aprsMessage:
+
+			msg.Recipient.Callsign = *chasercall
+			ssidInt, _ := strconv.Atoi(*chaserssid)
+			msg.Recipient.SSID = uint8(ssidInt)
+			msg.Text = m
+			msg.ID = "1"
+
+			mt, err := aprs.CreateMessage(msg)
+			if err != nil {
+				log.Printf("Error creating outgoing message: %v\n", err)
+			}
+
+			fmt.Printf("Sending: %v\n", mt)
+			err = SendAPRSPacket(mt, conn)
+			if err != nil {
+				log.Printf("Error sending outgoing message: %v\n", err)
+			}
+		}
+	}
+
 }
 
 func SendAPRSPacket(s string, conn io.ReadWriteCloser) error {
@@ -140,20 +172,30 @@ func StartAPRS() {
 
 	fmt.Println("aprs_controller::StartAPRS()")
 
-	if len(*remotetnc) > 0 {
-		conn, err = connectToNetworkTNC()
-		if err != nil {
-			log.Printf("Error connecting to TNC: %v\n", err)
+	for {
+		if len(*remotetnc) > 0 {
+			conn, err = connectToNetworkTNC()
+			if err != nil {
+				log.Printf("Error connecting to TNC: %v.  Sleeping 5sec and trying again.\n", err)
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				break
+			}
+		} else if len(*localtncport) > 0 {
+			conn, err = connectToSerialTNC()
+			if err != nil {
+				log.Printf("Error connecting to TNC: %v. Sleeping 5sec and trying again\n", err)
+				time.Sleep(5 * time.Second)
+				continue
+			} else {
+				break
+			}
+		} else {
+			log.Fatalln("Must provide either -remotetnc or -localtncport flag.")
 		}
-	} else if len(*localtncport) > 0 {
-		conn, err = connectToSerialTNC()
-		if err != nil {
-			log.Printf("Error connecting to TNC: %v\n", err)
-		}
-	} else {
-		log.Fatalln("Must provide either -remotetnc or -localtncport flag.")
 	}
 
 	go incomingAPRSEventHandler(conn)
-
+	go outgoingAPRSEventHandler(conn)
 }

@@ -18,15 +18,19 @@ import (
 )
 
 var (
-	timeToDie       = make(chan bool, 1)
-	currentPosition geospatial.Point
-	remotegps       *string
-	remotetnc       *string
-	localtncport    *string
-	mycall          *string
-	myssid          *string
-	debug           *bool
-	balloonAddr     ax25.APRSAddress
+	shutdownFlight   = make(chan bool)
+	shutdownComplete = make(chan bool)
+	aprsMessage      = make(chan string)
+	currentPosition  geospatial.Point
+	remotegps        *string
+	remotetnc        *string
+	localtncport     *string
+	mycall           *string
+	myssid           *string
+	chasercall       *string
+	chaserssid       *string
+	debug            *bool
+	balloonAddr      ax25.APRSAddress
 )
 
 func main() {
@@ -36,6 +40,8 @@ func main() {
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 	mycall = flag.String("mycall", "", "Balloon Callsign")
 	myssid = flag.String("myssid", "", "Balloon SSID")
+	chasercall = flag.String("chasercall", "", "Chaser Callsign")
+	chaserssid = flag.String("chaserssid", "", "Chaser SSID")
 	debug = flag.Bool("debug", false, "Enable debugging information")
 
 	flag.Parse()
@@ -50,6 +56,10 @@ func main() {
 		log.Fatalln("Must provide a balloon callsign.  Use -h for help.")
 	}
 
+	if len(*chasercall) == 0 {
+		log.Fatalln("Must provide a chaser callsign.  Use -h for help.")
+	}
+
 	balloonAddr.Callsign = *mycall
 	ssidInt, _ := strconv.Atoi(*myssid)
 	balloonAddr.SSID = uint8(ssidInt)
@@ -60,8 +70,7 @@ func main() {
 	go CameraRun()
 	go StartAPRS()
 	go GPSRun()
-	go InitiateCutdown()
 	<-sc
-	timeToDie <- true
+	shutdownFlight <- true
 	fmt.Println("Shutting down.")
 }
