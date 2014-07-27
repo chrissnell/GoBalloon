@@ -6,7 +6,6 @@
 package main
 
 import (
-	"fmt"
 	_ "github.com/chrissnell/gpio"
 	"github.com/mrmorphic/hwio"
 	"log"
@@ -26,22 +25,61 @@ func InitiateCutdown() {
 
 	outputPin, err := hwio.GetPinWithMode(pin, hwio.OUTPUT)
 	if err != nil {
-		log.Printf("Error getting GPIO pin: %v\n", err)
+		log.Printf("InitiateCutdown() :: Error getting GPIO pin: %v\n", err)
 	}
 
-	aprsMessage <- "Preparing to cutdown in 10 sec"
-	timer := time.NewTimer(time.Second * 10)
+	aprsMessage <- "Preparing to cutdown in 30 sec"
+	timer := time.NewTimer(time.Second * 30)
 	<-timer.C
-	fmt.Println("--- CUTTING DOWN ---")
+	log.Println("--- CUTTING DOWN ---")
 	hwio.DigitalWrite(outputPin, hwio.HIGH)
 	timer = time.NewTimer(time.Second * 10)
 	<-timer.C
 	hwio.DigitalWrite(outputPin, hwio.LOW)
 	hwio.CloseAll()
-	fmt.Println("Closed all pins")
+	log.Println("InitiateCutdown() :: Closed all pins")
 
 }
 
 func SoundBuzzer() {
+
+	var pin string = "gpio2_2"
+	toggle := make(chan bool)
+
+	outputPin, err := hwio.GetPinWithMode(pin, hwio.OUTPUT)
+	if err != nil {
+		log.Printf("Error getting GPIO pin: %v\n", err)
+	}
+
+	go func() {
+		for {
+			timer := time.NewTimer(time.Second * 1)
+			<-timer.C
+			toggle <- true
+			timer2 := time.NewTimer(time.Second * 1)
+			<-timer2.C
+			toggle <- false
+		}
+	}()
+
+	for {
+		select {
+		case <-shutdownFlight:
+			log.Println("SoundBuzzer() :: Break")
+			hwio.DigitalWrite(outputPin, hwio.LOW)
+			hwio.CloseAll()
+			log.Println("SoundBuzzer() :: Closed all pins")
+			shutdownComplete <- true
+			break
+		case t := <-toggle:
+			log.Printf("SoundBuzzer() :: Toggling buzzer: %v\n", t)
+			if t {
+				hwio.DigitalWrite(outputPin, hwio.HIGH)
+			} else {
+				hwio.DigitalWrite(outputPin, hwio.LOW)
+			}
+		}
+
+	}
 
 }
