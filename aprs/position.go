@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-func CreateUncompressedPositionReportWithoutTimestamp(p *geospatial.Point, symTable, symCode rune, messaging bool) (string, error) {
+func CreateUncompressedPositionReportWithoutTimestamp(p geospatial.Point, symTable, symCode rune, messaging bool) (string, error) {
 	var buffer bytes.Buffer
 	var lat_hem, lon_hem rune
 
@@ -58,7 +58,7 @@ func CreateUncompressedPositionReportWithoutTimestamp(p *geospatial.Point, symTa
 	return buffer.String(), nil
 }
 
-func CreateCompressedPositionReport(p *geospatial.Point, symTable, symCode rune) string {
+func CreateCompressedPositionReport(p geospatial.Point, symTable, symCode rune) string {
 	var buffer bytes.Buffer
 
 	// First byte in our compressed position report is the data type indicator.
