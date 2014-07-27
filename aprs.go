@@ -49,8 +49,6 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 	d := ax25.NewDecoder(conn)
 
-	//defer conn.Close()
-
 	for {
 
 		// Retrieve a packet
@@ -69,9 +67,11 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 			if strings.Contains(strings.ToUpper(ad.Message.Text), "CUTDOWN") {
 				log.Println("CUTDOWN command received.  Initiating cutdown.")
+				// Initiate cutdown When we receive the cutdown command
 				InitiateCutdown()
 			}
 
+			// Send an ACK message in response to the cutdown command message
 			ack, err := aprs.CreateMessageACK(ad.Message)
 			if err != nil {
 				log.Printf("Error creating APRS message ACK: %v", err)
@@ -93,6 +93,17 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 	for {
 		select {
+		case p := <-aprsPosition:
+
+			// Send a postition packet
+			pt := aprs.CreateCompressedPositionReport(p, symbolTable, symbolCode)
+
+			fmt.Printf("Sending position report: %v\n", pt)
+			err := SendAPRSPacket(pt, conn)
+			if err != nil {
+				log.Printf("Error sending position report: %v\n", err)
+			}
+
 		case m := <-aprsMessage:
 
 			msg.Recipient.Callsign = *chasercall
@@ -106,10 +117,10 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 				log.Printf("Error creating outgoing message: %v\n", err)
 			}
 
-			fmt.Printf("Sending: %v\n", mt)
+			fmt.Printf("Sending message: %v\n", mt)
 			err = SendAPRSPacket(mt, conn)
 			if err != nil {
-				log.Printf("Error sending outgoing message: %v\n", err)
+				log.Printf("Error sending message: %v\n", err)
 			}
 		}
 	}
@@ -165,12 +176,12 @@ func SendAPRSPacket(s string, conn io.ReadWriteCloser) error {
 
 }
 
-func StartAPRS() {
+func StartAPRSTNCConnector() {
 
 	var conn io.ReadWriteCloser
 	var err error
 
-	fmt.Println("aprs_controller::StartAPRS()")
+	fmt.Println("aprs_controller::StartAPRSTNCConnector()")
 
 	for {
 		if len(*remotetnc) > 0 {
@@ -198,4 +209,20 @@ func StartAPRS() {
 
 	go incomingAPRSEventHandler(conn)
 	go outgoingAPRSEventHandler(conn)
+}
+
+func StartAPRSPositionBeacon() {
+	fmt.Println("aprs_controller::StartAPRSPositionBeacon()")
+
+	for {
+		if currentPosition.Lat != 0 && currentPosition.Lon != 0 {
+			aprsPosition <- currentPosition
+		}
+		interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
+		if err != nil {
+			log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
+		}
+		time.Sleep(interval)
+	}
+
 }

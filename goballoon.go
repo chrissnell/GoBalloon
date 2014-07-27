@@ -21,16 +21,23 @@ var (
 	shutdownFlight   = make(chan bool)
 	shutdownComplete = make(chan bool)
 	aprsMessage      = make(chan string)
+	aprsPosition     = make(chan geospatial.Point)
 	currentPosition  geospatial.Point
 	remotegps        *string
 	remotetnc        *string
 	localtncport     *string
-	mycall           *string
-	myssid           *string
+	ballooncall      *string
+	balloonssid      *string
 	chasercall       *string
 	chaserssid       *string
+	beaconint        *string
 	debug            *bool
 	balloonAddr      ax25.APRSAddress
+)
+
+const (
+	symbolTable rune = '/'
+	symbolCode  rune = 'O'
 )
 
 func main() {
@@ -38,10 +45,11 @@ func main() {
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
 	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
-	mycall = flag.String("mycall", "", "Balloon Callsign")
-	myssid = flag.String("myssid", "", "Balloon SSID")
+	ballooncall = flag.String("ballooncall", "", "Balloon Callsign")
+	balloonssid = flag.String("balloonssid", "", "Balloon SSID")
 	chasercall = flag.String("chasercall", "", "Chaser Callsign")
 	chaserssid = flag.String("chaserssid", "", "Chaser SSID")
+	beaconint = flag.String("beaconint", "60", "APRS position beacon interval (secs)  Default: 60")
 	debug = flag.Bool("debug", false, "Enable debugging information")
 
 	flag.Parse()
@@ -52,7 +60,7 @@ func main() {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
 	}
 
-	if len(*mycall) == 0 {
+	if len(*ballooncall) == 0 {
 		log.Fatalln("Must provide a balloon callsign.  Use -h for help.")
 	}
 
@@ -60,15 +68,16 @@ func main() {
 		log.Fatalln("Must provide a chaser callsign.  Use -h for help.")
 	}
 
-	balloonAddr.Callsign = *mycall
-	ssidInt, _ := strconv.Atoi(*myssid)
+	balloonAddr.Callsign = *ballooncall
+	ssidInt, _ := strconv.Atoi(*balloonssid)
 	balloonAddr.SSID = uint8(ssidInt)
 
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
 	go CameraRun()
-	go StartAPRS()
+	go StartAPRSTNCConnector()
+	go StartAPRSPositionBeacon()
 	go GPSRun()
 	<-sc
 	shutdownFlight <- true

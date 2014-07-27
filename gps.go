@@ -39,7 +39,7 @@ type TPVSentence struct {
 	Epy    float64   `json:"epy"`
 	Epv    float64   `json:"ev"`
 	Track  float64   `json:"track"`
-	Speed  float64   `json:"speed"`
+	Speed  float32   `json:"speed"`
 	Climb  float64   `json:"climb"`
 	Epd    float64   `json:"epd"`
 	Eps    float64   `json:"eps"`
@@ -115,9 +115,11 @@ func processGPSDSentences(msg chan string) {
 				}
 				currentPosition.Lon = tpv.Lon
 				currentPosition.Lat = tpv.Lat
-				currentPosition.Altitude = tpv.Alt
+				currentPosition.Altitude = tpv.Alt * 3.28084 // meters to feet
+				currentPosition.Speed = tpv.Speed
+				currentPosition.Heading = uint16(tpv.Track)
 				if *debug {
-					fmt.Printf("--- LAT: %v   LON: %v   ALT: %v\n", tpv.Lat, tpv.Lon, tpv.Alt)
+					fmt.Printf("--- LAT: %v   LON: %v   ALT: %v  SPD: %v   HDG: %v\n", tpv.Lat, tpv.Lon, tpv.Alt, tpv.Speed, tpv.Track)
 				}
 			}
 		}
