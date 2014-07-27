@@ -27,5 +27,6 @@ Not Yet Complete
 * Camera servo control
 * Text-based console for chase vehicles
 * PCB design for BeagleBone cape that integrates GPS & TNC modules
+* HTTP console for use during pre-flight checks
 * More geospatial calculations
 * High altitude digipeater
