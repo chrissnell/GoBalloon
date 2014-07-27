@@ -10,7 +10,6 @@ package main
 import (
 	"bufio"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net"
 	"time"
@@ -50,13 +49,13 @@ func readFromGPSD(msg chan string) {
 	session := new(Session)
 
 	for {
-		fmt.Println("--- Connecting to gpsd")
+		log.Println("--- Connecting to gpsd")
 		session = new(Session)
 		var err error
 		session.socket, err = net.Dial("tcp", *remotegps)
 		if err != nil {
-			fmt.Printf("--- %v\n", err)
-			fmt.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
+			log.Printf("--- %v\n", err)
+			log.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
 			time.Sleep(5000 * time.Millisecond)
 			continue
 		}
@@ -76,12 +75,12 @@ func readFromGPSD(msg chan string) {
 			lines += 1
 			if lines > 100 {
 				if *debug {
-					fmt.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
+					log.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
 				}
 				break
 			}
 			if err != nil {
-				fmt.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
+				log.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
 				time.Sleep(1000 * time.Millisecond)
 				break
 			}
@@ -102,7 +101,7 @@ func processGPSDSentences(msg chan string) {
 				break
 			}
 			if *debug {
-				fmt.Println("--- Received a GPS sentence")
+				log.Println("--- Received a GPS sentence")
 			}
 			if classify.Class == "TPV" {
 				err := json.Unmarshal([]byte(m), &tpv)
@@ -111,7 +110,7 @@ func processGPSDSentences(msg chan string) {
 					break
 				}
 				if *debug {
-					fmt.Println("--- TPV sentence received")
+					log.Println("--- TPV sentence received")
 				}
 				currentPosition.Lon = tpv.Lon
 				currentPosition.Lat = tpv.Lat
@@ -119,7 +118,7 @@ func processGPSDSentences(msg chan string) {
 				currentPosition.Speed = tpv.Speed
 				currentPosition.Heading = uint16(tpv.Track)
 				if *debug {
-					fmt.Printf("--- LAT: %v   LON: %v   ALT: %v  SPD: %v   HDG: %v\n", tpv.Lat, tpv.Lon, tpv.Alt, tpv.Speed, tpv.Track)
+					log.Printf("--- LAT: %v   LON: %v   ALT: %v  SPD: %v   HDG: %v\n", tpv.Lat, tpv.Lon, tpv.Alt, tpv.Speed, tpv.Track)
 				}
 			}
 		}

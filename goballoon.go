@@ -7,7 +7,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
 	"log"
@@ -54,7 +53,7 @@ func main() {
 
 	flag.Parse()
 
-	fmt.Println("Starting up.")
+	log.Println("Starting up.")
 
 	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
@@ -79,7 +78,8 @@ func main() {
 	go StartAPRSTNCConnector()
 	go StartAPRSPositionBeacon()
 	go GPSRun()
+	go SoundBuzzer()
 	<-sc
 	shutdownFlight <- true
-	fmt.Println("Shutting down.")
+	log.Println("Shutting down.")
 }

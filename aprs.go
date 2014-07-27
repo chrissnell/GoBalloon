@@ -20,7 +20,7 @@ import (
 
 func connectToSerialTNC() (io.ReadWriteCloser, error) {
 
-	fmt.Println("aprs_controller::connectToSerialTNC()")
+	log.Println("aprs_controller::connectToSerialTNC()")
 
 	sc := &serial.Config{Name: *localtncport, Baud: 4800}
 	s, err := serial.OpenPort(sc)
@@ -34,7 +34,7 @@ func connectToSerialTNC() (io.ReadWriteCloser, error) {
 
 func connectToNetworkTNC() (io.ReadWriteCloser, error) {
 
-	fmt.Println("aprs_controller::connectToNetworkTNC()")
+	log.Println("aprs_controller::connectToNetworkTNC()")
 
 	conn, err := net.Dial("tcp", *remotetnc)
 	if err != nil {
@@ -45,7 +45,7 @@ func connectToNetworkTNC() (io.ReadWriteCloser, error) {
 
 func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 
-	fmt.Println("aprs_controller::incomingAPRSEventHandler()")
+	log.Println("aprs_controller::incomingAPRSEventHandler()")
 
 	d := ax25.NewDecoder(conn)
 
@@ -57,7 +57,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 			log.Printf("Error retrieving APRS message via KISS: %v", err)
 		}
 
-		fmt.Printf("Message received: %+v\n", msg)
+		log.Printf("Message received: %+v\n", msg)
 
 		// Parse the packet
 		ad := aprs.ParsePacket(&msg)
@@ -89,7 +89,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 	var msg aprs.Message
 
-	fmt.Println("aprs_controller::outgoingAPRSEventHandler()")
+	log.Println("aprs_controller::outgoingAPRSEventHandler()")
 
 	for {
 		select {
@@ -98,7 +98,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 			// Send a postition packet
 			pt := aprs.CreateCompressedPositionReport(p, symbolTable, symbolCode)
 
-			fmt.Printf("Sending position report: %v\n", pt)
+			log.Printf("Sending position report: %v\n", pt)
 			err := SendAPRSPacket(pt, conn)
 			if err != nil {
 				log.Printf("Error sending position report: %v\n", err)
@@ -117,7 +117,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 				log.Printf("Error creating outgoing message: %v\n", err)
 			}
 
-			fmt.Printf("Sending message: %v\n", mt)
+			log.Printf("Sending message: %v\n", mt)
 			err = SendAPRSPacket(mt, conn)
 			if err != nil {
 				log.Printf("Error sending message: %v\n", err)
@@ -181,7 +181,7 @@ func StartAPRSTNCConnector() {
 	var conn io.ReadWriteCloser
 	var err error
 
-	fmt.Println("aprs_controller::StartAPRSTNCConnector()")
+	log.Println("aprs_controller::StartAPRSTNCConnector()")
 
 	for {
 		if len(*remotetnc) > 0 {
@@ -212,7 +212,7 @@ func StartAPRSTNCConnector() {
 }
 
 func StartAPRSPositionBeacon() {
-	fmt.Println("aprs_controller::StartAPRSPositionBeacon()")
+	log.Println("aprs_controller::StartAPRSPositionBeacon()")
 
 	for {
 		if currentPosition.Lat != 0 && currentPosition.Lon != 0 {
