@@ -7,6 +7,8 @@ What Works
 ----------
 Initial work has been focused on making the communication and telemetry systems functional.  To that end, this is what works right now:
 
+* APRS Controller (uses APRS and AX.25 libraries to send and receive messages to/from ground control)
+* Balloon cutdown, triggered remotely by APRS message
 * NMEA GPS processing / gpsd integration
 * AX.25/KISS packet encoding and decoding over local serial line and TCP
 * APRS packet parser-dispatcher: examines the raw packets and dispatches appropriate decoder(s)
@@ -18,12 +20,11 @@ Initial work has been focused on making the communication and telemetry systems 
 
 In Progress
 -----------
-* Flight controls (strobe, buzzer, balloon cut-down)
-* APRS Controller (uses APRS and AX.25 libraries to send and receive messages to/from ground control)
+* Flight controls (strobe, buzzer)
 
 Not Yet Complete
 ----------------
-* Camera control (picture/video taking via CHDK, servo control)
+* Camera servo control
 * Text-based console for chase vehicles
 * PCB design for BeagleBone cape that integrates GPS & TNC modules
 * More geospatial calculations
