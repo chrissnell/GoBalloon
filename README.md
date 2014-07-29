@@ -3,7 +3,7 @@ GoBalloon
 
 GoBalloon is a High Altitude Balloon payload controller in Go.   The software is designed to run on a BeagleBone Black single board computer, which provides a full Linux environment while still being lightweight enough to fly in a balloon.  
 
-GoBalloon communicates back to earth via amateur radio and the APRS protocol; the software **includes a layer 2 protocol (AX.25) implementation** that is used to drive a radio modem called a Terminal Node Controller (TNC).  Using the TNC, GoBalloon reports its position and altitude periodically and listens for commands from the ground.  When flying, GoBalloon uses a locally-attached TNC via serial port.  For debugging on the ground, GoBalloon also supports a network-attached TNC via my [tnc-server](https://github.com/chrissnell/tnc-server) software.
+GoBalloon communicates back to earth via amateur radio and the APRS protocol; the software **includes a layer 2 protocol (AX.25) implementation** that is used to drive a radio modem called a Terminal Node Controller (TNC).  Using the TNC, GoBalloon periodically reports its position and altitude and listens for commands from the ground.  When flying, GoBalloon uses a locally-attached TNC via serial port.  For debugging on the ground, GoBalloon also supports a network-attached TNC via my [tnc-server](https://github.com/chrissnell/tnc-server) software.
 
 GoBalloon is capable of bi-directional communication with the ground and **includes an APRS library that encodes and decodes most of the popular APRS packet formats** including position reports (compressed and uncompressed), messages (send/receive/ACK), and telemetry (compressed and uncompressed).
 
