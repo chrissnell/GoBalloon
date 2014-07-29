@@ -11,8 +11,11 @@ import (
 	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/tv42/topic"
 	"log"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"runtime/pprof"
 	"strconv"
 	"syscall"
 )
@@ -56,6 +59,16 @@ func main() {
 
 	log.Println("Starting up.")
 
+	if *debug {
+		f, _ := os.Create("goballoon.pprof")
+		pprof.StartCPUProfile(f)
+		defer pprof.StopCPUProfile()
+
+		go func() {
+			log.Println(http.ListenAndServe("10.50.0.21:6464", nil))
+		}()
+	}
+
 	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
 	}
@@ -86,7 +99,7 @@ func main() {
 	go GPSRun(top)
 	go SoundBuzzer()
 	<-sc
-	shutdownFlight <- true
+	close(shutdownFlight)
 	log.Println("Shutting down.")
 	<-shutdownComplete
 	log.Println("Shutdown complete.")
