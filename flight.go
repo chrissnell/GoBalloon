@@ -6,11 +6,45 @@
 package main
 
 import (
-	_ "github.com/chrissnell/gpio"
+	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/mrmorphic/hwio"
+	"github.com/tv42/topic"
 	"log"
 	"time"
 )
+
+func FlightComputer(top *topic.Topic) {
+
+	var maxalt float64
+
+	consumer := make(chan interface{}, 1)
+	top.Register(consumer)
+
+	defer top.Unregister(consumer)
+
+	for {
+		select {
+		case <-shutdownFlight:
+			return
+
+		case p := <-consumer:
+			pos := p.(geospatial.Point)
+			if pos.Lat != 0 && pos.Lon != 0 {
+				if pos.Altitude > maxalt {
+					maxalt = pos.Altitude
+				}
+				log.Printf("MAX ALT: %v\n", maxalt)
+
+				if maxalt > 17000 && pos.Altitude < 15000 {
+					// Activate the buzzer
+				}
+
+			}
+		}
+
+	}
+
+}
 
 func InitiateCutdown() {
 	// P8-10
@@ -53,7 +87,7 @@ func SoundBuzzer() {
 
 	go func() {
 		for {
-			timer := time.NewTimer(time.Second * 1)
+			timer := time.NewTimer(time.Second * 1000)
 			<-timer.C
 			toggle <- true
 			timer2 := time.NewTimer(time.Second * 1)
@@ -70,7 +104,7 @@ func SoundBuzzer() {
 			hwio.CloseAll()
 			log.Println("SoundBuzzer() :: Closed all pins")
 			shutdownComplete <- true
-			break
+			return
 		case t := <-toggle:
 			log.Printf("SoundBuzzer() :: Toggling buzzer: %v\n", t)
 			if t {
