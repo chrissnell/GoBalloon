@@ -15,3 +15,5 @@ aprs/test/message-test
 aprsis/test/aprsis-client
 
 aprs/test/telemetry-test
+
+goballoon.pprof
