@@ -15,8 +15,7 @@ func CameraRun() {
 		select {
 		case <-shutdownFlight:
 			fmt.Println("CameraRun() Break")
-			break
-		default:
+			return
 
 			// NOT YET IMPLEMENTED
 
