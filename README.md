@@ -20,6 +20,7 @@ Initial work has been focused on making the communication and telemetry systems 
 
 In Progress
 -----------
+* Reducing CPU consumption
 * Flight controls (strobe, buzzer)
 
 Not Yet Complete
