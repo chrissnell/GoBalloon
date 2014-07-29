@@ -9,7 +9,9 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
+	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/tarm/goserial"
+	"github.com/tv42/topic"
 	"io"
 	"log"
 	"net"
@@ -211,18 +213,28 @@ func StartAPRSTNCConnector() {
 	go outgoingAPRSEventHandler(conn)
 }
 
-func StartAPRSPositionBeacon() {
+func StartAPRSPositionBeacon(top *topic.Topic) {
+
+	consumer := make(chan interface{}, 1)
+	top.Register(consumer)
+
+	defer top.Unregister(consumer)
+
 	log.Println("aprs_controller::StartAPRSPositionBeacon()")
 
 	for {
-		if currentPosition.Lat != 0 && currentPosition.Lon != 0 {
-			aprsPosition <- currentPosition
+		select {
+		case p := <-consumer:
+			if p.(geospatial.Point).Lat != 0 && p.(geospatial.Point).Lon != 0 {
+				aprsPosition <- p.(geospatial.Point)
+			}
+			interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
+			if err != nil {
+				log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
+			}
+			time.Sleep(interval)
 		}
-		interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
-		if err != nil {
-			log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
-		}
-		time.Sleep(interval)
+
 	}
 
 }

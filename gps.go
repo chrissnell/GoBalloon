@@ -10,6 +10,8 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"github.com/chrissnell/GoBalloon/geospatial"
+	"github.com/tv42/topic"
 	"log"
 	"net"
 	"time"
@@ -89,8 +91,9 @@ func readFromGPSD(msg chan string) {
 	}
 }
 
-func processGPSDSentences(msg chan string) {
+func processGPSDSentences(msg chan string, top *topic.Topic) {
 	var tpv *TPVSentence
+
 	for {
 		select {
 		case m := <-msg:
@@ -112,23 +115,23 @@ func processGPSDSentences(msg chan string) {
 				if *debug {
 					log.Println("--- TPV sentence received")
 				}
-				currentPosition.Lon = tpv.Lon
-				currentPosition.Lat = tpv.Lat
-				currentPosition.Altitude = tpv.Alt * 3.28084 // meters to feet
-				currentPosition.Speed = tpv.Speed
-				currentPosition.Heading = uint16(tpv.Track)
+				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
+
+				log.Printf("Broadcasting position %+v\n", pos)
+				top.Broadcast <- pos
+
 				if *debug {
-					log.Printf("--- LAT: %v   LON: %v   ALT: %v  SPD: %v   HDG: %v\n", tpv.Lat, tpv.Lon, tpv.Alt, tpv.Speed, tpv.Track)
+					log.Printf("%+v\n", pos)
 				}
 			}
 		}
 	}
 }
 
-func GPSRun() {
+func GPSRun(top *topic.Topic) {
 	msg := make(chan string, 100)
 
 	go readFromGPSD(msg)
-	go processGPSDSentences(msg)
+	go processGPSDSentences(msg, top)
 
 }

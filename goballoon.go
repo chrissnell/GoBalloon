@@ -9,6 +9,7 @@ import (
 	"flag"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
+	"github.com/tv42/topic"
 	"log"
 	"os"
 	"os/signal"
@@ -74,10 +75,15 @@ func main() {
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
+	// We're going to use Topic to handle the one -> many distribution
+	// of our GPS readings
+	top := topic.New()
+	defer close(top.Broadcast)
+
 	go CameraRun()
 	go StartAPRSTNCConnector()
-	go StartAPRSPositionBeacon()
-	go GPSRun()
+	go StartAPRSPositionBeacon(top)
+	go GPSRun(top)
 	go SoundBuzzer()
 	<-sc
 	shutdownFlight <- true
