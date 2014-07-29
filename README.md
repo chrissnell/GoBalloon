@@ -1,7 +1,13 @@
 GoBalloon
 =========
 
-High Altitude Balloon payload controller in Go.   
+GoBalloon is a High Altitude Balloon payload controller in Go.   The software is designed to run on a BeagleBone Black single board computer, which provides a full Linux environment while still being lightweight enough to fly in a balloon.  
+
+GoBalloon communicates back to earth via amateur radio and the APRS protocol; the software speaks a layer 2 protocol (AX.25) directly to a radio modem called a Terminal Node Controller (TNC).  When flying, GoBalloon uses a locally-attached TNC via serial port.  For debugging on the ground, GoBalloon also supports a network-attached TNC using KISS-over-TCP and my [tnc-server](https://github.com/chrissnell/tnc-server) software.
+
+GoBalloon is capable of bi-directional communication with the ground and comes with a APRS library that encodes and decodes most of the popular APRS packet formats including position reports (compressed and uncompressed), messages (send/receive/ACK), and telemetry (compressed and uncompressed).
+
+GoBalloon uses [gpsd](www.catb.org/gpsd/) to communicate with its GPS receiver and thanks to gpsd, supports a wide range of GPS devices.  When flying, the software uses a locally-attached GPS via serial port but supports a remote GPS via TCP when debugging on the ground.
 
 What Works
 ----------
