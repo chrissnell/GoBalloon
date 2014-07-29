@@ -115,7 +115,7 @@ func processGPSDSentences(msg chan string, top *topic.Topic) {
 				if *debug {
 					log.Println("--- TPV sentence received")
 				}
-				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
+				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
 
 				log.Printf("Broadcasting position %+v\n", pos)
 				top.Broadcast <- pos
