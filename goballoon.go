@@ -82,4 +82,6 @@ func main() {
 	<-sc
 	shutdownFlight <- true
 	log.Println("Shutting down.")
+	<-shutdownComplete
+	log.Println("Shutdown complete.")
 }
