@@ -95,6 +95,9 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 	for {
 		select {
+		case <-shutdownFlight:
+			return
+
 		case p := <-aprsPosition:
 
 			// Send a postition packet
@@ -124,6 +127,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 			if err != nil {
 				log.Printf("Error sending message: %v\n", err)
 			}
+
 		}
 	}
 
@@ -225,14 +229,17 @@ func StartAPRSPositionBeacon(top *topic.Topic) {
 	for {
 		select {
 		case p := <-consumer:
-			if p.(geospatial.Point).Lat != 0 && p.(geospatial.Point).Lon != 0 {
-				aprsPosition <- p.(geospatial.Point)
+			if p != nil {
+				pos := p.(geospatial.Point)
+				if pos.Lat != 0 && pos.Lon != 0 {
+					aprsPosition <- pos
+				}
+				interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
+				if err != nil {
+					log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
+				}
+				time.Sleep(interval)
 			}
-			interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
-			if err != nil {
-				log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
-			}
-			time.Sleep(interval)
 		}
 
 	}
