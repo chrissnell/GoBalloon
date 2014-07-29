@@ -6,9 +6,7 @@
 package main
 
 import (
-	_ "github.com/chrissnell/gpio"
-	"log"
-	"time"
+	"fmt"
 )
 
 func CameraRun() {
