@@ -130,7 +130,7 @@ func processGPSDSentences(msg chan string, top *topic.Topic) {
 }
 
 func GPSRun(top *topic.Topic) {
-	msg := make(chan string, 100)
+	msg := make(chan string)
 
 	go readFromGPSD(msg)
 	go processGPSDSentences(msg, top)

@@ -59,7 +59,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 			log.Printf("Error retrieving APRS message via KISS: %v", err)
 		}
 
-		log.Printf("Message received: %+v\n", msg)
+		log.Printf("Incoming APRS packet received: %+v\n", msg)
 
 		// Parse the packet
 		ad := aprs.ParsePacket(&msg)
@@ -219,7 +219,7 @@ func StartAPRSTNCConnector() {
 
 func StartAPRSPositionBeacon(top *topic.Topic) {
 
-	consumer := make(chan interface{}, 1)
+	consumer := make(chan interface{})
 	top.Register(consumer)
 
 	defer top.Unregister(consumer)
