@@ -11,11 +11,8 @@ import (
 	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/tv42/topic"
 	"log"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime/pprof"
 	"strconv"
 	"syscall"
 )
@@ -58,13 +55,6 @@ func main() {
 	flag.Parse()
 
 	log.Println("Starting up.")
-
-	f, _ := os.Create("goballoon.pprof")
-	pprof.StartCPUProfile(f)
-	defer pprof.StopCPUProfile()
-	go func() {
-		log.Println(http.ListenAndServe("0.0.0.0:6464", nil))
-	}()
 
 	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
