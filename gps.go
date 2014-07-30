@@ -95,34 +95,35 @@ func processGPSDSentences(msg chan string, top *topic.Topic) {
 	var tpv *TPVSentence
 
 	for {
-		select {
-		case m := <-msg:
-			var classify GPSDSentence
-			err := json.Unmarshal([]byte(m), &classify)
+		m := <-msg
+		var classify GPSDSentence
+		err := json.Unmarshal([]byte(m), &classify)
+		if err != nil {
+			log.Printf("--- ERROR: Could not unmarshal sentence %v\n", err)
+			break
+		}
+		if *debug {
+			log.Println("--- Received a GPS sentence")
+		}
+		if classify.Class == "TPV" {
+			err := json.Unmarshal([]byte(m), &tpv)
 			if err != nil {
-				log.Printf("--- ERROR: Could not unmarshal sentence %v\n", err)
+				log.Printf("--- ERROR: Could not unmarshal TPV sentence: %v\n", err)
 				break
 			}
 			if *debug {
-				log.Println("--- Received a GPS sentence")
+				log.Println("--- TPV sentence received")
 			}
-			if classify.Class == "TPV" {
-				err := json.Unmarshal([]byte(m), &tpv)
-				if err != nil {
-					log.Printf("--- ERROR: Could not unmarshal TPV sentence: %v\n", err)
-					break
-				}
-				if *debug {
-					log.Println("--- TPV sentence received")
-				}
-				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
+			pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
 
+			if *debug {
 				log.Printf("Broadcasting position %+v\n", pos)
-				top.Broadcast <- pos
+			}
 
-				if *debug {
-					log.Printf("%+v\n", pos)
-				}
+			top.Broadcast <- pos
+
+			if *debug {
+				log.Printf("%+v\n", pos)
 			}
 		}
 	}
