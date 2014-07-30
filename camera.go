@@ -11,17 +11,13 @@ import (
 
 func CameraRun() {
 	fmt.Println("CameraRun() start")
-	for {
-		select {
-		case <-shutdownFlight:
-			fmt.Println("CameraRun() Break")
-			return
+	<-shutdownFlight
+	fmt.Println("CameraRun() End")
+	return
 
-			// NOT YET IMPLEMENTED
+	// NOT YET IMPLEMENTED
 
-			// This block will activate the camera servo periodically, to point the camera
-			// at the ground and the horizon.
+	// This block will activate the camera servo periodically, to point the camera
+	// at the ground and the horizon.
 
-		}
-	}
 }
