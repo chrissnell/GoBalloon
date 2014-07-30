@@ -59,15 +59,12 @@ func main() {
 
 	log.Println("Starting up.")
 
-	if *debug {
-		f, _ := os.Create("goballoon.pprof")
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-
-		go func() {
-			log.Println(http.ListenAndServe("10.50.0.21:6464", nil))
-		}()
-	}
+	f, _ := os.Create("goballoon.pprof")
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+	go func() {
+		log.Println(http.ListenAndServe("0.0.0.0:6464", nil))
+	}()
 
 	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
@@ -97,10 +94,11 @@ func main() {
 	go StartAPRSTNCConnector()
 	go StartAPRSPositionBeacon(top)
 	go GPSRun(top)
-	go SoundBuzzer()
 	<-sc
-	close(shutdownFlight)
+	shutdownFlight <- true
 	log.Println("Shutting down.")
-	<-shutdownComplete
+
+	// This needs to be converted to use sync.WaitGroup
+	// <-shutdownComplete
 	log.Println("Shutdown complete.")
 }
