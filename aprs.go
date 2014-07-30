@@ -228,16 +228,17 @@ func StartAPRSPositionBeacon(top *topic.Topic) {
 
 	for {
 		p := <-consumer
+		log.Println("Received new GPS point")
 		if p != nil {
 			pos := p.(geospatial.Point)
 			if pos.Lat != 0 && pos.Lon != 0 {
 				aprsPosition <- pos
 			}
-			interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
-			if err != nil {
-				log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
-			}
-			time.Sleep(interval)
 		}
+		interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
+		if err != nil {
+			log.Fatalf("Invalid beacon interval.  Parsing error: %v\n", err)
+		}
+		time.Sleep(interval)
 	}
 }
