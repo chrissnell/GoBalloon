@@ -96,6 +96,7 @@ func main() {
 	go GPSRun(top)
 	<-sc
 	shutdownFlight <- true
+	close(shutdownFlight)
 	log.Println("Shutting down.")
 
 	// This needs to be converted to use sync.WaitGroup
