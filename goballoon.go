@@ -13,24 +13,24 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 )
 
 var (
-	shutdownFlight   = make(chan bool)
-	shutdownComplete = make(chan bool)
-	aprsMessage      = make(chan string)
-	aprsPosition     = make(chan geospatial.Point)
-	remotegps        *string
-	remotetnc        *string
-	localtncport     *string
-	ballooncall      *string
-	balloonssid      *string
-	chasercall       *string
-	chaserssid       *string
-	beaconint        *string
-	debug            *bool
-	balloonAddr      ax25.APRSAddress
+	shutdownFlight = make(chan bool)
+	aprsMessage    = make(chan string)
+	aprsPosition   = make(chan geospatial.Point)
+	remotegps      *string
+	remotetnc      *string
+	localtncport   *string
+	ballooncall    *string
+	balloonssid    *string
+	chasercall     *string
+	chaserssid     *string
+	beaconint      *string
+	debug          *bool
+	balloonAddr    ax25.APRSAddress
 )
 
 const (
@@ -41,6 +41,7 @@ const (
 func main() {
 
 	var g GPSReading
+	var wg sync.WaitGroup
 
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
 	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
@@ -75,6 +76,7 @@ func main() {
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
+	go FlightComputer(&g, &wg)
 	go CameraRun()
 	go StartAPRSTNCConnector(&g)
 	go GPSRun(&g)
@@ -83,8 +85,6 @@ func main() {
 	shutdownFlight <- true
 	close(shutdownFlight)
 	log.Println("Shutting down.")
-
-	// This needs to be converted to use sync.WaitGroup
-	// <-shutdownComplete
+	wg.Wait()
 	log.Println("Shutdown complete.")
 }

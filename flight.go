@@ -8,12 +8,18 @@ package main
 import (
 	"github.com/mrmorphic/hwio"
 	"log"
+	"sync"
 	"time"
 )
 
-func FlightComputer(g *GPSReading) {
+func FlightComputer(g *GPSReading, wg *sync.WaitGroup) {
 
 	var maxalt float64
+	var once sync.Once
+	var timer *time.Timer
+
+	wg.Add(1)
+	defer wg.Done()
 
 	for {
 		select {
@@ -29,10 +35,14 @@ func FlightComputer(g *GPSReading) {
 				log.Printf("MAX ALT: %v\n", maxalt)
 
 				if maxalt > 17000 && pos.Altitude < 15000 {
-					// Activate the buzzer
+					once.Do(func() { SoundBuzzer(wg) })
 				}
 
 			}
+
+			timer = time.NewTimer(time.Second * 5)
+			<-timer.C
+
 		}
 
 	}
@@ -68,11 +78,16 @@ func InitiateCutdown() {
 
 }
 
-func SoundBuzzer() {
+func SoundBuzzer(wg *sync.WaitGroup) {
 
 	var timer, timer2 *time.Timer
 	var pin string = "gpio2_2"
 	toggle := make(chan bool)
+
+	wg.Add(1)
+	defer wg.Done()
+
+	log.Println("Activating buzzer")
 
 	outputPin, err := hwio.GetPinWithMode(pin, hwio.OUTPUT)
 	if err != nil {
@@ -81,10 +96,10 @@ func SoundBuzzer() {
 
 	go func() {
 		for {
-			timer = time.NewTimer(time.Second * 1000)
+			timer = time.NewTimer(time.Millisecond * 1000)
 			<-timer.C
 			toggle <- true
-			timer2 = time.NewTimer(time.Second * 1)
+			timer2 = time.NewTimer(time.Millisecond * 50)
 			<-timer2.C
 			toggle <- false
 		}
@@ -97,7 +112,6 @@ func SoundBuzzer() {
 			hwio.DigitalWrite(outputPin, hwio.LOW)
 			hwio.CloseAll()
 			log.Println("SoundBuzzer() :: Closed all pins")
-			shutdownComplete <- true
 			return
 		case t := <-toggle:
 			log.Printf("SoundBuzzer() :: Toggling buzzer: %v\n", t)
