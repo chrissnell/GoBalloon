@@ -11,9 +11,9 @@ import (
 	"bufio"
 	"encoding/json"
 	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/tv42/topic"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -45,6 +45,23 @@ type TPVSentence struct {
 	Epd    float64   `json:"epd"`
 	Eps    float64   `json:"eps"`
 	Epc    float64   `json:"epc"`
+}
+
+type GPSReading struct {
+	mu  sync.Mutex
+	pos geospatial.Point
+}
+
+func (g *GPSReading) Set(pos geospatial.Point) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.pos = pos
+}
+
+func (g *GPSReading) Get() geospatial.Point {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.pos
 }
 
 func readFromGPSD(msg chan string) {
@@ -91,7 +108,7 @@ func readFromGPSD(msg chan string) {
 	}
 }
 
-func processGPSDSentences(msg chan string, top *topic.Topic) {
+func processGPSDSentences(msg chan string, g *GPSReading) {
 	var tpv *TPVSentence
 
 	for {
@@ -120,7 +137,9 @@ func processGPSDSentences(msg chan string, top *topic.Topic) {
 				log.Printf("Broadcasting position %+v\n", pos)
 			}
 
-			top.Broadcast <- pos
+			if pos.Lat != 0 {
+				g.Set(pos)
+			}
 
 			if *debug {
 				log.Printf("%+v\n", pos)
@@ -129,10 +148,10 @@ func processGPSDSentences(msg chan string, top *topic.Topic) {
 	}
 }
 
-func GPSRun(top *topic.Topic) {
+func GPSRun(g *GPSReading) {
 	msg := make(chan string)
 
 	go readFromGPSD(msg)
-	go processGPSDSentences(msg, top)
+	go processGPSDSentences(msg, g)
 
 }

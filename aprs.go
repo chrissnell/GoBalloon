@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
-	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/tarm/goserial"
-	"github.com/tv42/topic"
 	"io"
 	"log"
 	"net"
@@ -45,7 +43,7 @@ func connectToNetworkTNC() (io.ReadWriteCloser, error) {
 	return io.ReadWriteCloser(conn), nil
 }
 
-func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
+func incomingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
 
 	log.Println("aprs_controller::incomingAPRSEventHandler()")
 
@@ -78,7 +76,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 			if err != nil {
 				log.Printf("Error creating APRS message ACK: %v", err)
 			}
-			err = SendAPRSPacket(ack, conn)
+			err = SendAPRSPacket(ack, conn, g)
 			if err != nil {
 				log.Printf("Error sending APRS message ACK: %v", err)
 			}
@@ -87,7 +85,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser) {
 	}
 }
 
-func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
+func outgoingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
 
 	var msg aprs.Message
 
@@ -104,7 +102,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 			pt := aprs.CreateCompressedPositionReport(p, symbolTable, symbolCode)
 
 			log.Printf("Sending position report: %v\n", pt)
-			err := SendAPRSPacket(pt, conn)
+			err := SendAPRSPacket(pt, conn, g)
 			if err != nil {
 				log.Printf("Error sending position report: %v\n", err)
 			}
@@ -123,7 +121,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 			}
 
 			log.Printf("Sending message: %v\n", mt)
-			err = SendAPRSPacket(mt, conn)
+			err = SendAPRSPacket(mt, conn, g)
 			if err != nil {
 				log.Printf("Error sending message: %v\n", err)
 			}
@@ -133,7 +131,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser) {
 
 }
 
-func SendAPRSPacket(s string, conn io.ReadWriteCloser) error {
+func SendAPRSPacket(s string, conn io.ReadWriteCloser, g *GPSReading) error {
 
 	var path []ax25.APRSAddress
 
@@ -147,7 +145,7 @@ func SendAPRSPacket(s string, conn io.ReadWriteCloser) error {
 		SSID:     0,
 	}
 
-	if currentPosition.Altitude > 3000 {
+	if g.Get().Altitude > 3000 {
 		path = append(path, ax25.APRSAddress{
 			Callsign: "WIDE2",
 			SSID:     1,
@@ -182,7 +180,7 @@ func SendAPRSPacket(s string, conn io.ReadWriteCloser) error {
 
 }
 
-func StartAPRSTNCConnector() {
+func StartAPRSTNCConnector(g *GPSReading) {
 
 	var conn io.ReadWriteCloser
 	var err error
@@ -213,27 +211,20 @@ func StartAPRSTNCConnector() {
 		}
 	}
 
-	go incomingAPRSEventHandler(conn)
-	go outgoingAPRSEventHandler(conn)
+	go incomingAPRSEventHandler(conn, g)
+	go outgoingAPRSEventHandler(conn, g)
 }
 
-func StartAPRSPositionBeacon(top *topic.Topic) {
-
-	consumer := make(chan interface{})
-	top.Register(consumer)
-
-	defer top.Unregister(consumer)
+func StartAPRSPositionBeacon(g *GPSReading) {
 
 	log.Println("aprs_controller::StartAPRSPositionBeacon()")
 
 	for {
-		p := <-consumer
-		log.Println("Received new GPS point")
-		if p != nil {
-			pos := p.(geospatial.Point)
-			if pos.Lat != 0 && pos.Lon != 0 {
-				aprsPosition <- pos
-			}
+		p := g.Get()
+		log.Printf("Received new GPS point: %+v\n", p)
+		if p.Lat != 0 && p.Lon != 0 {
+			log.Printf("Sending APRS position for broadcast: %+v\n", p)
+			aprsPosition <- p
 		}
 		interval, err := time.ParseDuration(fmt.Sprintf("%vs", *beaconint))
 		if err != nil {

@@ -9,7 +9,6 @@ import (
 	"flag"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/tv42/topic"
 	"log"
 	"os"
 	"os/signal"
@@ -22,7 +21,6 @@ var (
 	shutdownComplete = make(chan bool)
 	aprsMessage      = make(chan string)
 	aprsPosition     = make(chan geospatial.Point)
-	currentPosition  geospatial.Point
 	remotegps        *string
 	remotetnc        *string
 	localtncport     *string
@@ -41,6 +39,8 @@ const (
 )
 
 func main() {
+
+	var g GPSReading
 
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
 	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
@@ -75,15 +75,10 @@ func main() {
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
-	// We're going to use Topic to handle the one -> many distribution
-	// of our GPS readings
-	top := topic.New()
-	defer close(top.Broadcast)
-
 	go CameraRun()
-	go StartAPRSTNCConnector()
-	go StartAPRSPositionBeacon(top)
-	go GPSRun(top)
+	go StartAPRSTNCConnector(&g)
+	go GPSRun(&g)
+	go StartAPRSPositionBeacon(&g)
 	<-sc
 	shutdownFlight <- true
 	close(shutdownFlight)

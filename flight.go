@@ -6,29 +6,22 @@
 package main
 
 import (
-	"github.com/chrissnell/GoBalloon/geospatial"
 	"github.com/mrmorphic/hwio"
-	"github.com/tv42/topic"
 	"log"
 	"time"
 )
 
-func FlightComputer(top *topic.Topic) {
+func FlightComputer(g *GPSReading) {
 
 	var maxalt float64
-
-	consumer := make(chan interface{}, 1)
-	top.Register(consumer)
-
-	defer top.Unregister(consumer)
 
 	for {
 		select {
 		case <-shutdownFlight:
 			return
 
-		case p := <-consumer:
-			pos := p.(geospatial.Point)
+		default:
+			pos := g.Get()
 			if pos.Lat != 0 && pos.Lon != 0 {
 				if pos.Altitude > maxalt {
 					maxalt = pos.Altitude
@@ -77,6 +70,7 @@ func InitiateCutdown() {
 
 func SoundBuzzer() {
 
+	var timer, timer2 *time.Timer
 	var pin string = "gpio2_2"
 	toggle := make(chan bool)
 
@@ -87,10 +81,10 @@ func SoundBuzzer() {
 
 	go func() {
 		for {
-			timer := time.NewTimer(time.Second * 1000)
+			timer = time.NewTimer(time.Second * 1000)
 			<-timer.C
 			toggle <- true
-			timer2 := time.NewTimer(time.Second * 1)
+			timer2 = time.NewTimer(time.Second * 1)
 			<-timer2.C
 			toggle <- false
 		}
