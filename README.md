@@ -17,6 +17,7 @@ Initial work has been focused on making the communication and telemetry systems 
 
 * APRS Controller (sends position reports, receives+acks cutdown messages)
 * Balloon cutdown, triggered remotely by APRS message
+* Burst detection with activation of buzzer/strobe upon descent
 * NMEA GPS processing / gpsd integration
 * AX.25/KISS packet encoding and decoding over local serial line and TCP
 * APRS packet parser-dispatcher: examines the raw packets and dispatches appropriate decoder(s)
@@ -28,13 +29,13 @@ Initial work has been focused on making the communication and telemetry systems 
 
 In Progress
 -----------
-* Flight controls (strobe, buzzer)
+* PCB design for BeagleBone cape that integrates GPS & TNC modules
+* Text-based console for chase vehicles
 
 Not Yet Complete
 ----------------
+* Input voltage detection and reporting
 * Camera servo control
-* Text-based console for chase vehicles
-* PCB design for BeagleBone cape that integrates GPS & TNC modules
 * HTTP console for use during pre-flight checks
 * More geospatial calculations
 * High altitude digipeater
