@@ -24,6 +24,7 @@ Initial work has been focused on making the communication and telemetry systems 
 * APRS position reports encoding and decoding (compressed and uncompressed, with and without timestamps)
 * APRS telemetry reports encoding and decoding (compressed and uncompressed)
 * APRS messaging
+* Geospatial calculations - Great Circle distance/bearing
 * APRS-IS client (ganked from @dustin)
 * APRS-style Base91 encoding
 
@@ -37,5 +38,4 @@ Not Yet Complete
 * Input voltage detection and reporting
 * Camera servo control
 * HTTP console for use during pre-flight checks
-* More geospatial calculations
 * High altitude digipeater
