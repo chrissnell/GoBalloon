@@ -30,7 +30,12 @@ Initial work has been focused on making the communication and telemetry systems 
 
 In Progress
 -----------
-* PCB design for BeagleBone cape that integrates GPS & TNC modules
+* PCB design for BeagleBone cape that integrates:
+  * Argent Data T3 Micro 
+  * LM386 audio amplifier (either directly on my cape or via the [cheap eBay modules](http://www.ebay.com/sch/i.html?_from=R40&_trksid=p2050601.m570.l1311.R5.TR10.TRC2.A0.H0.Xlm386+a&_nkw=lm386+audio+amplifier+module&_sacat=0)) 
+  * [uBLOX MAX-7](http://ava.upuaut.net/store/index.php?route=product/product&product_id=51) from HAB Supplies
+  * [Texas Instruments INA219 I<sup>2</sup>C power monitoring chip](http://www.ti.com/lit/ds/symlink/ina219.pdf)
+  * [Dimension Engineering switching voltage regulator](https://www.dimensionengineering.com/products/de-sw050)
 * Text-based console for chase vehicles
 
 Not Yet Complete
