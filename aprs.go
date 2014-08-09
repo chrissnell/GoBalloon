@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/chrissnell/GoBalloon/aprs"
 	"github.com/chrissnell/GoBalloon/ax25"
+	"github.com/chrissnell/GoBalloon/gps"
 	"github.com/tarm/goserial"
 	"io"
 	"log"
@@ -43,7 +44,7 @@ func connectToNetworkTNC() (io.ReadWriteCloser, error) {
 	return io.ReadWriteCloser(conn), nil
 }
 
-func incomingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
+func incomingAPRSEventHandler(conn io.ReadWriteCloser, g *gps.GPSReading) {
 
 	log.Println("aprs_controller::incomingAPRSEventHandler()")
 
@@ -85,7 +86,7 @@ func incomingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
 	}
 }
 
-func outgoingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
+func outgoingAPRSEventHandler(conn io.ReadWriteCloser, g *gps.GPSReading) {
 
 	var msg aprs.Message
 
@@ -131,7 +132,7 @@ func outgoingAPRSEventHandler(conn io.ReadWriteCloser, g *GPSReading) {
 
 }
 
-func SendAPRSPacket(s string, conn io.ReadWriteCloser, g *GPSReading) error {
+func SendAPRSPacket(s string, conn io.ReadWriteCloser, g *gps.GPSReading) error {
 
 	var path []ax25.APRSAddress
 
@@ -180,7 +181,7 @@ func SendAPRSPacket(s string, conn io.ReadWriteCloser, g *GPSReading) error {
 
 }
 
-func StartAPRSTNCConnector(g *GPSReading) {
+func StartAPRSTNCConnector(g *gps.GPSReading) {
 
 	var conn io.ReadWriteCloser
 	var err error
@@ -215,7 +216,7 @@ func StartAPRSTNCConnector(g *GPSReading) {
 	go outgoingAPRSEventHandler(conn, g)
 }
 
-func StartAPRSPositionBeacon(g *GPSReading) {
+func StartAPRSPositionBeacon(g *gps.GPSReading) {
 
 	log.Println("aprs_controller::StartAPRSPositionBeacon()")
 

@@ -5,7 +5,7 @@
 // This code borrows heavily from https://github.com/stratoberry/go-gpsd
 // Some portions (c) 2013 Stratoberry Pi Project
 
-package main
+package gps
 
 import (
 	"bufio"
@@ -64,14 +64,16 @@ func (g *GPSReading) Get() geospatial.Point {
 	return g.pos
 }
 
-func readFromGPSD(msg chan string) {
+func readFromGPSD(msg chan string, gpsaddr string, debug *bool) {
 	session := new(Session)
 
 	for {
-		log.Println("--- Connecting to gpsd")
+		if *debug {
+			log.Println("--- Connecting to gpsd")
+		}
 		session = new(Session)
 		var err error
-		session.socket, err = net.Dial("tcp", *remotegps)
+		session.socket, err = net.Dial("tcp", gpsaddr)
 		if err != nil {
 			log.Printf("--- %v\n", err)
 			log.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
@@ -108,7 +110,7 @@ func readFromGPSD(msg chan string) {
 	}
 }
 
-func processGPSDSentences(msg chan string, g *GPSReading) {
+func processGPSDSentences(msg chan string, g *GPSReading, debug *bool) {
 	var tpv *TPVSentence
 
 	for {
@@ -148,10 +150,10 @@ func processGPSDSentences(msg chan string, g *GPSReading) {
 	}
 }
 
-func GPSRun(g *GPSReading) {
+func GPSRun(g *GPSReading, gpsaddr string, debug *bool) {
 	msg := make(chan string)
 
-	go readFromGPSD(msg)
-	go processGPSDSentences(msg, g)
+	go readFromGPSD(msg, gpsaddr, debug)
+	go processGPSDSentences(msg, g, debug)
 
 }

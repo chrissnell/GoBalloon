@@ -6,13 +6,14 @@
 package main
 
 import (
+	"github.com/chrissnell/GoBalloon/gps"
 	"github.com/mrmorphic/hwio"
 	"log"
 	"sync"
 	"time"
 )
 
-func FlightComputer(g *GPSReading, wg *sync.WaitGroup) {
+func FlightComputer(g *gps.GPSReading, wg *sync.WaitGroup) {
 
 	var maxalt float64
 	var once sync.Once
@@ -32,7 +33,10 @@ func FlightComputer(g *GPSReading, wg *sync.WaitGroup) {
 				if pos.Altitude > maxalt {
 					maxalt = pos.Altitude
 				}
-				log.Printf("MAX ALT: %v\n", maxalt)
+
+				if *debug {
+					log.Printf("MAX ALT: %v\n", maxalt)
+				}
 
 				if maxalt > 17000 && pos.Altitude < 15000 {
 					once.Do(func() { SoundBuzzer(wg) })

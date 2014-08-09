@@ -9,6 +9,7 @@ import (
 	"flag"
 	"github.com/chrissnell/GoBalloon/ax25"
 	"github.com/chrissnell/GoBalloon/geospatial"
+	"github.com/chrissnell/GoBalloon/gps"
 	"log"
 	"os"
 	"os/signal"
@@ -40,7 +41,7 @@ const (
 
 func main() {
 
-	var g GPSReading
+	var g gps.GPSReading
 	var wg sync.WaitGroup
 
 	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
@@ -79,7 +80,7 @@ func main() {
 	go FlightComputer(&g, &wg)
 	go CameraRun()
 	go StartAPRSTNCConnector(&g)
-	go GPSRun(&g)
+	go gps.GPSRun(&g, *remotegps, debug)
 	go StartAPRSPositionBeacon(&g)
 	<-sc
 	shutdownFlight <- true
