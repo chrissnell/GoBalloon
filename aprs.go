@@ -189,19 +189,19 @@ func StartAPRSTNCConnector(g *gps.GPSReading) {
 	log.Println("aprs_controller::StartAPRSTNCConnector()")
 
 	for {
-		if len(*remotetnc) > 0 {
-			conn, err = connectToNetworkTNC()
+		if len(*localtncport) > 0 {
+			conn, err = connectToSerialTNC()
 			if err != nil {
-				log.Printf("Error connecting to TNC: %v.  Sleeping 5sec and trying again.\n", err)
+				log.Printf("Error connecting to TNC: %v. Sleeping 5sec and trying again\n", err)
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
 				break
 			}
-		} else if len(*localtncport) > 0 {
-			conn, err = connectToSerialTNC()
+		} else if len(*remotetnc) > 0 {
+			conn, err = connectToNetworkTNC()
 			if err != nil {
-				log.Printf("Error connecting to TNC: %v. Sleeping 5sec and trying again\n", err)
+				log.Printf("Error connecting to TNC: %v.  Sleeping 5sec and trying again.\n", err)
 				time.Sleep(5 * time.Second)
 				continue
 			} else {
