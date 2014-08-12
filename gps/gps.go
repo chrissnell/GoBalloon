@@ -133,7 +133,8 @@ func processGPSDSentences(msg chan string, g *GPSReading, debug *bool) {
 			if *debug {
 				log.Println("--- TPV sentence received")
 			}
-			pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed, Heading: uint16(tpv.Track), Time: time.Now()}
+			// Convert altitude to feet and speed to miles/hour.
+			pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed * 2.236936, Heading: uint16(tpv.Track), Time: time.Now()}
 
 			if *debug {
 				log.Printf("Broadcasting position %+v\n", pos)
