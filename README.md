@@ -37,7 +37,7 @@ In Progress
   * [uBLOX MAX-7](http://ava.upuaut.net/store/index.php?route=product/product&product_id=51) from HAB Supplies
   * [Texas Instruments INA219 I<sup>2</sup>C power monitoring chip](http://www.ti.com/lit/ds/symlink/ina219.pdf)
   * [Dimension Engineering switching voltage regulator](https://www.dimensionengineering.com/products/de-sw050)
-* Text-based console for chase vehicles
+* [Text-based console for chase vehicles](https://github.com/chrissnell/gophertrak)
 
 Not Yet Complete
 ----------------
