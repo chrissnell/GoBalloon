@@ -14,8 +14,6 @@ GoBalloon uses [gpsd](www.catb.org/gpsd/) to communicate with its GPS receiver a
 
 What Works
 ----------
-Initial work has been focused on making the communication and telemetry systems functional.  To that end, this is what works right now:
-
 * APRS Controller (sends position reports, receives+acks cutdown messages)
 * Balloon cutdown, triggered remotely by APRS message
 * Burst detection with activation of buzzer/strobe upon descent
@@ -32,8 +30,6 @@ Initial work has been focused on making the communication and telemetry systems 
 In Progress
 -----------
 * PCB design for BeagleBone cape that integrates:
-  * [Argent Data T3 Mini](http://www.argentdata.com/products/tracker3.html)
-  * LM386 audio amplifier (either directly on my cape or via the [cheap eBay modules](http://www.ebay.com/sch/i.html?_from=R40&_trksid=p2050601.m570.l1311.R5.TR10.TRC2.A0.H0.Xlm386+a&_nkw=lm386+audio+amplifier+module&_sacat=0)) 
   * [uBLOX MAX-7](http://ava.upuaut.net/store/index.php?route=product/product&product_id=51) from HAB Supplies
   * [Texas Instruments INA219 I<sup>2</sup>C power monitoring chip](http://www.ti.com/lit/ds/symlink/ina219.pdf)
   * [Dimension Engineering switching voltage regulator](https://www.dimensionengineering.com/products/de-sw050)
@@ -41,6 +37,7 @@ In Progress
 
 Not Yet Complete
 ----------------
+* Support for I<sup>2</sup>C TNC connection (requires some additions to @davecheney's i2c library)
 * Input voltage detection and reporting
 * Camera servo control
 * HTTP console for use during pre-flight checks
