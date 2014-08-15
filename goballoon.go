@@ -44,16 +44,21 @@ func main() {
 	// Set up a new GPS
 	g := new(gps.GPS)
 
+	// Set up a new TNC with our APRS symbol
+	a := new(APRSTNC)
+	a.symbolTable = symbolTable
+	a.symbolCode = symbolCode
+
 	var wg sync.WaitGroup
 
 	g.Remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
-	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
-	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
+	a.Remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
+	a.Localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 	ballooncall = flag.String("ballooncall", "", "Balloon Callsign")
 	balloonssid = flag.String("balloonssid", "", "Balloon SSID")
 	chasercall = flag.String("chasercall", "", "Chaser Callsign")
 	chaserssid = flag.String("chaserssid", "", "Chaser SSID")
-	beaconint = flag.String("beaconint", "60", "APRS position beacon interval (secs)  Default: 60")
+	a.Beaconint = flag.String("beaconint", "60", "APRS position beacon interval (secs)  Default: 60")
 	debug = flag.Bool("debug", false, "Enable debugging information")
 
 	flag.Parse()
@@ -62,7 +67,7 @@ func main() {
 
 	log.Println("Starting up.")
 
-	if (len(*remotetnc) == 0) && (len(*localtncport) == 0) {
+	if (len(*a.Remotetnc) == 0) && (len(*a.Localtncport) == 0) {
 		log.Fatalln("Must specify a local or remote TNC.  Use -h for help.")
 	}
 
@@ -83,9 +88,9 @@ func main() {
 
 	go FlightComputer(&g.Reading, &wg)
 	go CameraRun()
-	go StartAPRSTNCConnector(&g.Reading)
 	go g.StartGPS()
-	go StartAPRSPositionBeacon(&g.Reading)
+	a.gps = &g.Reading
+	go a.StartAPRS()
 	<-sc
 	shutdownFlight <- true
 	close(shutdownFlight)
