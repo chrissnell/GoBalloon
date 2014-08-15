@@ -63,10 +63,11 @@ func ParseAPRSISPacket(i string) ax25.APRSPacket {
 	pathparts := strings.Split(srcparts[1], ",")
 
 	return ax25.APRSPacket{Original: i,
-		Source: AddressFromString(srcparts[0]),
-		Dest:   AddressFromString(pathparts[0]),
-		Path:   parseAddresses(pathparts[1:]),
-		Body:   parts[1]}
+		Source:       AddressFromString(srcparts[0]),
+		Dest:         AddressFromString(pathparts[0]),
+		Path:         parseAddresses(pathparts[1:]),
+		Body:         parts[1],
+		OriginalBody: parts[1]}
 
 }
 

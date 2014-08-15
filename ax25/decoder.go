@@ -19,11 +19,12 @@ import (
 //type Info string
 
 type APRSPacket struct {
-	Original string
-	Source   APRSAddress
-	Dest     APRSAddress
-	Path     []APRSAddress
-	Body     string
+	Original     string
+	Source       APRSAddress
+	Dest         APRSAddress
+	Path         []APRSAddress
+	Body         string
+	OriginalBody string
 }
 
 type Decoder struct {
@@ -160,6 +161,10 @@ func decodeMessage(frame []byte) (dm APRSPacket, err error) {
 	// If we're still going now, we can safely assume that everything remaining is APRS
 	// data.   We'll convert the remaining bytes to a string and save it as the APRSMessage body.
 	dm.Body = string(frame[2:])
+
+	// APRSMessage.Body gets modified by the APRS decoder so we'll save a copy of it in the struct
+	// that will remain in its original form
+	dm.OriginalBody = dm.Body
 
 	return
 
