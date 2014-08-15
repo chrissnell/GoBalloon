@@ -41,10 +41,12 @@ const (
 
 func main() {
 
-	var g gps.GPSReading
+	// Set up a new GPS
+	g := new(gps.GPS)
+
 	var wg sync.WaitGroup
 
-	remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
+	g.Remotegps = flag.String("remotegps", "10.50.0.21:2947", "Remote gpsd server")
 	remotetnc = flag.String("remotetnc", "10.50.0.25:6700", "Remote TNC server")
 	localtncport = flag.String("localtncport", "", "Local serial port for TNC, e.g. /dev/ttyUSB0")
 	ballooncall = flag.String("ballooncall", "", "Balloon Callsign")
@@ -55,6 +57,8 @@ func main() {
 	debug = flag.Bool("debug", false, "Enable debugging information")
 
 	flag.Parse()
+
+	g.Debug = debug
 
 	log.Println("Starting up.")
 
@@ -77,11 +81,11 @@ func main() {
 	sc := make(chan os.Signal, 2)
 	signal.Notify(sc, syscall.SIGTERM, syscall.SIGINT)
 
-	go FlightComputer(&g, &wg)
+	go FlightComputer(&g.Reading, &wg)
 	go CameraRun()
-	go StartAPRSTNCConnector(&g)
-	go gps.GPSRun(&g, *remotegps, debug)
-	go StartAPRSPositionBeacon(&g)
+	go StartAPRSTNCConnector(&g.Reading)
+	go g.StartGPS()
+	go StartAPRSPositionBeacon(&g.Reading)
 	<-sc
 	shutdownFlight <- true
 	close(shutdownFlight)

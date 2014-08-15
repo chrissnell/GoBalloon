@@ -17,9 +17,18 @@ import (
 	"time"
 )
 
-type Session struct {
-	socket net.Conn
-	reader *bufio.Reader
+type GPS struct {
+	conn            net.Conn
+	reader          *bufio.Reader
+	Reading         GPSReading
+	Remotegps       *string
+	connecting      bool
+	connectingMutex sync.Mutex
+	connected       chan bool
+	ready           bool
+	readyMutex      sync.Mutex
+	msg             chan string
+	Debug           *bool
 }
 
 type GPSDSentence struct {
@@ -52,109 +61,171 @@ type GPSReading struct {
 	pos geospatial.Point
 }
 
-func (g *GPSReading) Set(pos geospatial.Point) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.pos = pos
+func (gr *GPSReading) Set(pos geospatial.Point) {
+	gr.mu.Lock()
+	defer gr.mu.Unlock()
+	gr.pos = pos
 }
 
-func (g *GPSReading) Get() geospatial.Point {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return g.pos
+func (gr *GPSReading) Get() geospatial.Point {
+	gr.mu.Lock()
+	defer gr.mu.Unlock()
+	return gr.pos
 }
 
-func readFromGPSD(msg chan string, gpsaddr string, debug *bool) {
-	session := new(Session)
+func (g *GPS) IsReady() bool {
+	g.readyMutex.Lock()
+	defer g.readyMutex.Unlock()
+	return g.ready
+}
 
-	for {
-		if *debug {
-			log.Println("--- Connecting to gpsd")
-		}
-		session = new(Session)
-		var err error
-		session.socket, err = net.Dial("tcp", gpsaddr)
-		if err != nil {
-			log.Printf("--- %v\n", err)
-			log.Println("--- ERROR: Could not connect to gpsd.  Sleeping 5s and retrying.")
-			time.Sleep(5000 * time.Millisecond)
-			continue
-		}
+func (g *GPS) Ready(r bool) {
+	g.readyMutex.Lock()
+	defer g.readyMutex.Unlock()
+	g.ready = r
+}
 
-		_, err = session.socket.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
-		if err != nil {
-			log.Printf("--- ERROR: Could not send WATCH command to gpsd: %v", err)
-			continue
-		}
+func (g *GPS) StartGPS() {
+	log.Println("GPS.StartGPS()")
 
-		session.reader = bufio.NewReader(session.socket)
+	g.connected = make(chan bool, 4)
+	g.msg = make(chan string)
 
-		lines := 0
+	// Set up a new connection to the GPS
+	g.connectToNetworkGPS()
+
+	// Start a handler in a goroutine to read sentences off the Reader
+	go g.incomingJSONHandler()
+
+	// Start a processor in a goroutine to Unmarshal the JSON read by the handler
+	go g.processJSONSentences()
+
+}
+
+func (g *GPS) connectToNetworkGPS() {
+	var err error
+
+	// This mutex controls access to the boolean that indicates when a connect/reconnect
+	// attempt is in progress
+	g.connectingMutex.Lock()
+
+	if g.connecting {
+		g.connectingMutex.Unlock()
+		log.Println("Skipping reconnect since a connection attempt is already in progress")
+		return
+	} else {
+		// A connection attempt is not in progress so we'll start a new one
+		g.connecting = true
+		g.connectingMutex.Unlock()
+
+		log.Println("Connecting to remote GPS ", *g.Remotegps)
 
 		for {
-			line, err := session.reader.ReadString('\n')
-			lines += 1
-			if lines > 100 {
-				if *debug {
-					log.Printf("%v lines received.  Disconnecting and reconnecting\n", lines)
-				}
-				break
-			}
+			g.conn, err = net.Dial("tcp", *g.Remotegps)
 			if err != nil {
-				log.Println("--- ERROR: Could not read from GPSD. Sleeping 1s and retrying.")
-				time.Sleep(1000 * time.Millisecond)
-				break
+				log.Printf("Could not connect to %v.  Error: %v", *g.Remotegps, err)
+				log.Println("Sleeping 5 seconds and trying again")
+				time.Sleep(5 * time.Second)
+			} else {
+				log.Printf("Connection to GPS %v successful", g.conn.RemoteAddr())
+				g.conn.SetReadDeadline(time.Now().Add(time.Second * 15))
+
+				_, err = g.conn.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
+				if err != nil {
+					log.Println("Error sending WATCH command to GPS: ", err)
+					g.connected <- false
+					log.Println("Attempting to reconnect to GPS")
+					g.connectToNetworkGPS()
+					continue
+				}
+
+				// Set up our reader
+				g.reader = bufio.NewReader(g.conn)
+
+				// We're connected and should be receiving JSON messages now so we'll send a message
+				// on the connected channel that we're good
+				g.connected <- true
+
+				// We also need to declare that the GPS is ready
+				g.Ready(true)
+
+				g.connectingMutex.Lock()
+				// Now that we've connected, we're no longer "connecting".  If a connection fails
+				// and connectToNetworkGPS() is called now, it should trigger a reconnect, so we
+				// set a.connecting to false
+				g.connecting = false
+				g.connectingMutex.Unlock()
+
+				return
 			}
-			msg <- line
 		}
 	}
 }
 
-func processGPSDSentences(msg chan string, g *GPSReading, debug *bool) {
+func (g *GPS) incomingJSONHandler() {
+	log.Println("GPS.incomingJSONHandler()")
+
+	for {
+		if g.IsReady() {
+			line, err := g.reader.ReadString('\n')
+			if err != nil {
+				g.connected <- false
+				g.Ready(false)
+				log.Printf("Error retrieving JSON message from GPS: %v", err)
+				log.Println("Attempting to reconnect to the GPS")
+				g.connectToNetworkGPS()
+				continue
+			}
+
+			// Extend our read deadline
+			g.conn.SetReadDeadline(time.Now().Add(time.Second * 15))
+
+			// If we made it this far, we've successfully read a line so we send it over
+			// the msg channel to be decoded elsewhere
+			g.msg <- line
+		}
+	}
+}
+
+func (g *GPS) processJSONSentences() {
+	var classify GPSDSentence
 	var tpv *TPVSentence
 
 	for {
-		m := <-msg
-		var classify GPSDSentence
-		err := json.Unmarshal([]byte(m), &classify)
-		if err != nil {
-			log.Printf("--- ERROR: Could not unmarshal sentence %v\n", err)
-			break
-		}
-		if *debug {
-			log.Println("--- Received a GPS sentence")
-		}
-		if classify.Class == "TPV" {
-			err := json.Unmarshal([]byte(m), &tpv)
+		select {
+		case m := <-g.msg:
+			err := json.Unmarshal([]byte(m), &classify)
 			if err != nil {
-				log.Printf("--- ERROR: Could not unmarshal TPV sentence: %v\n", err)
-				break
-			}
-			if *debug {
-				log.Println("--- TPV sentence received")
-			}
-			// Convert altitude to feet and speed to miles/hour.
-			pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed * 2.236936, Heading: uint16(tpv.Track), Time: time.Now()}
-
-			if *debug {
-				log.Printf("Broadcasting position %+v\n", pos)
+				log.Println("ERROR: Could not unmarshal sentence %v", err)
+				continue
 			}
 
-			if pos.Lat != 0 {
-				g.Set(pos)
+			if *g.Debug {
+				log.Printf("Received a GPS sentence: %v\n", m)
 			}
 
-			if *debug {
-				log.Printf("%+v\n", pos)
+			if classify.Class == "TPV" {
+				err := json.Unmarshal([]byte(m), &tpv)
+				if err != nil {
+					log.Printf("ERROR: Could not unmarshal TPV sentence: %v\n", err)
+					continue
+				}
+
+				if *g.Debug {
+					log.Println("TPV sentence received")
+				}
+
+				// Build our Point, converting altitude from meters to feet and speed from meters/sec to mph
+				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed * 2.236936, Heading: uint16(tpv.Track), Time: time.Now()}
+
+				if pos.Lat != 0 {
+					if *g.Debug {
+						log.Printf("Saving position: %v\n", pos)
+					}
+
+					g.Reading.Set(pos)
+				}
 			}
 		}
 	}
-}
-
-func GPSRun(g *GPSReading, gpsaddr string, debug *bool) {
-	msg := make(chan string)
-
-	go readFromGPSD(msg, gpsaddr, debug)
-	go processGPSDSentences(msg, g, debug)
-
 }
