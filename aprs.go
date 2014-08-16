@@ -228,7 +228,7 @@ func (a *APRSTNC) outgoingAPRSEventHandler() {
 
 	var msg aprs.Message
 
-	log.Println("aprs::outgoingAPRSEventHandler()")
+	log.Println("APRSTNC.outgoingAPRSEventHandler()")
 
 	for {
 		select {
