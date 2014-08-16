@@ -24,7 +24,6 @@ type GPS struct {
 	Remotegps       *string
 	connecting      bool
 	connectingMutex sync.Mutex
-	connected       chan bool
 	ready           bool
 	readyMutex      sync.Mutex
 	msg             chan string
@@ -88,7 +87,6 @@ func (g *GPS) Ready(r bool) {
 func (g *GPS) StartGPS() {
 	log.Println("GPS.StartGPS()")
 
-	g.connected = make(chan bool, 4)
 	g.msg = make(chan string)
 
 	// Set up a new connection to the GPS
@@ -133,7 +131,6 @@ func (g *GPS) connectToNetworkGPS() {
 				_, err = g.conn.Write([]byte("?WATCH={\"enable\":true,\"json\":true}"))
 				if err != nil {
 					log.Println("Error sending WATCH command to GPS: ", err)
-					g.connected <- false
 					log.Println("Attempting to reconnect to GPS")
 					g.connectToNetworkGPS()
 					continue
@@ -141,10 +138,6 @@ func (g *GPS) connectToNetworkGPS() {
 
 				// Set up our reader
 				g.reader = bufio.NewReader(g.conn)
-
-				// We're connected and should be receiving JSON messages now so we'll send a message
-				// on the connected channel that we're good
-				g.connected <- true
 
 				// We also need to declare that the GPS is ready
 				g.Ready(true)
@@ -169,7 +162,6 @@ func (g *GPS) incomingJSONHandler() {
 		if g.IsReady() {
 			line, err := g.reader.ReadString('\n')
 			if err != nil {
-				g.connected <- false
 				g.Ready(false)
 				log.Printf("Error retrieving JSON message from GPS: %v", err)
 				log.Println("Attempting to reconnect to the GPS")
