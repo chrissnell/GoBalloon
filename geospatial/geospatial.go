@@ -39,7 +39,7 @@ func ToDegrees(d float64) float64 {
 	return d * RadToDeg
 }
 
-func (p1 *Point) GreatCircleDistanceTo(p2 *Point) (d float64) {
+func (p1 *Point) GreatCircleDistanceTo(p2 Point) (d float64) {
 	// Formula from www.movable-type.co.uk/scripts/latlong.html
 	R := float64(6371)
 	φ1 := ToRadians(p1.Lat)
@@ -54,7 +54,7 @@ func (p1 *Point) GreatCircleDistanceTo(p2 *Point) (d float64) {
 	return R * c * 0.621371
 }
 
-func (p1 *Point) BearingTo(p2 *Point) uint16 {
+func (p1 *Point) BearingTo(p2 Point) uint16 {
 	// Formula from www.movable-type.co.uk/scripts/latlong.html
 	φ1 := ToRadians(p1.Lat)
 	φ2 := ToRadians(p2.Lat)
