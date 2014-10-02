@@ -10,7 +10,7 @@ GoBalloon is capable of bi-directional communication with the ground and **inclu
 
 GoBalloon includes GPIO support and will trigger an external cut-down device when a cut-down message is received via APRS messaging.  GPIO is also used to activate a piezoelectric buzzer upon descent to aid searchers looking for the landed payload.
 
-GoBalloon uses [gpsd](www.catb.org/gpsd/) to communicate with its GPS receiver and thanks to gpsd, supports a wide range of GPS devices.  When flying, the software uses a locally-attached GPS via serial port but supports a remote GPS via TCP when debugging on the ground.
+GoBalloon uses [gpsd](http://www.catb.org/gpsd/) to communicate with its GPS receiver and thanks to gpsd, supports a wide range of GPS devices.  When flying, the software uses a locally-attached GPS via serial port but supports a remote GPS via TCP when debugging on the ground.
 
 What Works
 ----------
