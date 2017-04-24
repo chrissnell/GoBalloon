@@ -1,8 +1,8 @@
 GoBalloon
 =========
-![GopherTrak](https://dl.dropboxusercontent.com/u/16837290/Ham%20Radio/gophertrak.png)
+![GopherTrak](https://chrissnell.com/images/github/gophertrak.png)
 
-#####For a quick introduction to GoBalloon, [have a look at the presentation I gave to the Seattle Go Developers Meetup](https://speakerdeck.com/chrissnell/goballoon-automating-a-high-altitude-balloon-payload-with-go).
+##### For a quick introduction to GoBalloon, [have a look at the presentation I gave to the Seattle Go Developers Meetup](https://speakerdeck.com/chrissnell/goballoon-automating-a-high-altitude-balloon-payload-with-go).
 
 GoBalloon is a High Altitude Balloon payload controller in Go.   The software is designed to run on a BeagleBone Black single board computer, which provides a full Linux environment while still being lightweight enough to fly in a balloon.  
 
