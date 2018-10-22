@@ -16,7 +16,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chrissnell/GoBalloon/geospatial"
+	"github.com/chrissnell/GoBalloon/pkg/geospatial"
 )
 
 // GPS holds our GPS configuration and runtime objects
