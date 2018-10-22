@@ -9,6 +9,7 @@ package gps
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"log"
 	"net"
@@ -21,14 +22,11 @@ import (
 // GPS holds our GPS configuration and runtime objects
 type GPS struct {
 	conn            net.Conn
-	reader          *bufio.Reader
 	CurrentPosition CurrentPosition
 	Remotegps       *string
-	connecting      bool
-	connectingMutex sync.Mutex
 	ready           bool
 	readyMutex      sync.RWMutex
-	Debug           *bool
+	debug           *bool
 }
 
 // Sentence is a generic sentence of uncertain type from gpsd
@@ -92,74 +90,97 @@ func (g *GPS) Ready(r bool) {
 	g.ready = r
 }
 
+// NewGPS creates a new connection to gpsd
+func NewGPS(ctx context.Context, wg *sync.WaitGroup, remoteGPS string) *GPS {
+	var g *GPS
+	wg.Add(1)
+	go g.StartGPS(ctx, wg)
+	return g
+}
+
 // StartGPS connects to a gpsd server over TCP
-func (g *GPS) StartGPS() {
+func (g *GPS) StartGPS(ctx context.Context, wg *sync.WaitGroup) {
 	var err error
+	defer wg.Done()
 
 	clientErr := make(chan error)
 
 	for {
-		g.conn, err = net.Dial("tcp", *g.Remotegps)
-		if err != nil {
-			log.Printf("error connecting to %v: %v", *g.Remotegps, err)
-			continue
-		}
+		select {
+		case <-ctx.Done():
+			return
 
-		go g.readFromGPSD(clientErr)
-		err = <-clientErr
+		default:
+			g.conn, err = net.Dial("tcp", *g.Remotegps)
+			if err != nil {
+				log.Printf("error connecting to %v: %v", *g.Remotegps, err)
+				continue
+			}
+
+			wg.Add(1)
+			go g.readFromGPSD(ctx, wg, clientErr)
+			err = <-clientErr
+		}
 	}
 }
 
-func (g *GPS) readFromGPSD(clientErr chan error) {
+func (g *GPS) readFromGPSD(ctx context.Context, wg *sync.WaitGroup, clientErr chan error) {
 	var sentence Sentence
 	var tpv *TPVSentence
+	defer wg.Done()
 
 	log.Println("GPS.incomingJSONHandler()")
 
-	scanner := bufio.NewScanner(g.reader)
+	scanner := bufio.NewScanner(g.conn)
 	for scanner.Scan() {
-		// Read the line from our Scanner
-		msg := scanner.Bytes()
-
-		// Attempt to unmarshal it to a Sentence
-		err := json.Unmarshal(msg, &sentence)
-		if err != nil {
-			clientErr <- err
+		select {
+		case <-ctx.Done():
 			return
-		}
 
-		// We were able to read a JSON message, so we extend our read deadline
-		g.conn.SetReadDeadline(time.Now().Add(time.Second * 15))
+		default:
+			// Read the line from our Scanner
+			msg := scanner.Bytes()
 
-		switch sentence.Class {
-		case "TPV":
-			if err = json.Unmarshal(msg, &tpv); err != nil {
+			// Attempt to unmarshal it to a Sentence
+			err := json.Unmarshal(msg, &sentence)
+			if err != nil {
 				clientErr <- err
 				return
 			}
 
-			// Build our Point, converting altitude from meters to feet and speed from meters/sec to mph
-			pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed * 2.236936, Heading: uint16(tpv.Track), Time: time.Now()}
+			// We were able to read a JSON message, so we extend our read deadline
+			g.conn.SetReadDeadline(time.Now().Add(time.Second * 15))
 
-			// Ensure a valid position
-			if pos.Lat != 0 {
-				if *g.Debug {
-					log.Printf("Saving position: %+v\n", pos)
+			switch sentence.Class {
+			case "TPV":
+				if err = json.Unmarshal(msg, &tpv); err != nil {
+					clientErr <- err
+					return
 				}
 
-				// Set our position
-				g.CurrentPosition.Set(pos)
+				// Build our Point, converting altitude from meters to feet and speed from meters/sec to mph
+				pos := geospatial.Point{Lon: tpv.Lon, Lat: tpv.Lat, Altitude: tpv.Alt * 3.28084, Speed: tpv.Speed * 2.236936, Heading: uint16(tpv.Track), Time: time.Now()}
 
-				// Since we got a valid position, indicate that the GPS is ready
-				g.Ready(true)
-			} else {
-				// The GPS is not ready
-				g.Ready(false)
+				// Ensure a valid position
+				if pos.Lat != 0 {
+					if *g.debug {
+						log.Printf("Saving position: %+v\n", pos)
+					}
+
+					// Set our position
+					g.CurrentPosition.Set(pos)
+
+					// Since we got a valid position, indicate that the GPS is ready
+					g.Ready(true)
+				} else {
+					// The GPS is not ready
+					g.Ready(false)
+				}
+
 			}
-
 		}
-
 	}
+
 	if err := scanner.Err(); err != nil {
 		clientErr <- err
 		return
