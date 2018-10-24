@@ -11,6 +11,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net"
 	"sync"
@@ -23,10 +24,11 @@ import (
 type GPS struct {
 	conn            net.Conn
 	CurrentPosition CurrentPosition
-	Remotegps       *string
-	ready           bool
-	readyMutex      sync.RWMutex
-	debug           *bool
+	RemoteGPSAddr   *string
+	debug           bool
+
+	readyMutex sync.RWMutex
+	ready      bool
 }
 
 // Sentence is a generic sentence of uncertain type from gpsd
@@ -91,9 +93,13 @@ func (g *GPS) Ready(r bool) {
 }
 
 // NewGPS creates a new connection to gpsd
-func NewGPS(ctx context.Context, wg *sync.WaitGroup, remoteGPS string) *GPS {
+func NewGPS(ctx context.Context, wg *sync.WaitGroup, remoteGPS string, debug bool) *GPS {
 	var g *GPS
+
 	wg.Add(1)
+
+	g.debug = debug
+
 	go g.StartGPS(ctx, wg)
 	return g
 }
@@ -111,9 +117,10 @@ func (g *GPS) StartGPS(ctx context.Context, wg *sync.WaitGroup) {
 			return
 
 		default:
-			g.conn, err = net.Dial("tcp", *g.Remotegps)
+			log.Printf("Connecting to remote GPS at %v ...", *g.RemoteGPSAddr)
+			g.conn, err = net.Dial("tcp", *g.RemoteGPSAddr)
 			if err != nil {
-				log.Printf("error connecting to %v: %v", *g.Remotegps, err)
+				log.Printf("error connecting to %v: %v", *g.RemoteGPSAddr, err)
 				continue
 			}
 
@@ -129,12 +136,13 @@ func (g *GPS) readFromGPSD(ctx context.Context, wg *sync.WaitGroup, clientErr ch
 	var tpv *TPVSentence
 	defer wg.Done()
 
-	log.Println("GPS.incomingJSONHandler()")
-
 	scanner := bufio.NewScanner(g.conn)
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
+			// Our context is done so we through an empty error so that the parent function's select{} loop
+			// will not block, and we return.
+			clientErr <- errors.New("")
 			return
 
 		default:
@@ -153,6 +161,10 @@ func (g *GPS) readFromGPSD(ctx context.Context, wg *sync.WaitGroup, clientErr ch
 
 			switch sentence.Class {
 			case "TPV":
+				if g.debug {
+					log.Printf("Got a TPV sentence: %+v\n", sentence)
+				}
+
 				if err = json.Unmarshal(msg, &tpv); err != nil {
 					clientErr <- err
 					return
@@ -163,7 +175,7 @@ func (g *GPS) readFromGPSD(ctx context.Context, wg *sync.WaitGroup, clientErr ch
 
 				// Ensure a valid position
 				if pos.Lat != 0 {
-					if *g.debug {
+					if g.debug {
 						log.Printf("Saving position: %+v\n", pos)
 					}
 
@@ -185,5 +197,10 @@ func (g *GPS) readFromGPSD(ctx context.Context, wg *sync.WaitGroup, clientErr ch
 		clientErr <- err
 		return
 	}
+
+	// There are no more lines to scan, so we through an empty error so that the parent function's select{} loop
+	// will not block, and we return.
+	clientErr <- errors.New("")
+	return
 
 }
