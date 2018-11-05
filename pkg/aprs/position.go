@@ -17,9 +17,11 @@ import (
 	"github.com/chrissnell/GoBalloon/pkg/geospatial"
 )
 
+// CreateUncompressedPositionReportWithoutTimestamp creates an APRS position report without a timestamp.
+// The report is in a format suitable for adding to the data payload of an AX.25 APRS packet.
 func CreateUncompressedPositionReportWithoutTimestamp(p geospatial.Point, symTable, symCode rune, messaging bool) (string, error) {
 	var buffer bytes.Buffer
-	var lat_hem, lon_hem rune
+	var latitudeHemisphere, longitudeHemisphere rune
 
 	if messaging {
 		buffer.WriteRune('=')
@@ -28,38 +30,40 @@ func CreateUncompressedPositionReportWithoutTimestamp(p geospatial.Point, symTab
 	}
 
 	if math.Abs(p.Lat) > 90 {
-		return "", fmt.Errorf("Latitude is > +/- 90 degrees: %v\n", p.Lat)
+		return "", fmt.Errorf("latitude is > +/- 90 degrees: %v", p.Lat)
 	}
 
 	if math.Abs(p.Lon) > 180 {
-		return "", fmt.Errorf("Longitude is > +/- 180 degrees: %v\n", p.Lon)
+		return "", fmt.Errorf("longitude is > +/- 180 degrees: %v", p.Lon)
 	}
 
 	if p.Lat > 0 {
-		lat_hem = 'N'
+		latitudeHemisphere = 'N'
 	} else {
-		lat_hem = 'S'
+		latitudeHemisphere = 'S'
 	}
 
 	if p.Lon > 0 {
-		lon_hem = 'E'
+		longitudeHemisphere = 'E'
 	} else {
-		lon_hem = 'W'
+		longitudeHemisphere = 'W'
 	}
 
 	buffer.WriteString(geospatial.LatDecimalDegreesToDegreesDecimalMinutes(math.Abs(p.Lat)))
-	buffer.WriteRune(lat_hem)
+	buffer.WriteRune(latitudeHemisphere)
 
 	buffer.WriteRune(symTable)
 
 	buffer.WriteString(geospatial.LonDecimalDegreesToDegreesDecimalMinutes(math.Abs(p.Lon)))
-	buffer.WriteRune(lon_hem)
+	buffer.WriteRune(longitudeHemisphere)
 
 	buffer.WriteRune(symCode)
 
 	return buffer.String(), nil
 }
 
+// CreateCompressedPositionReport  creates an APRS position report in compressed format.
+// The report is in a format suitable for adding to the data payload of an AX.25 APRS packet.
 func CreateCompressedPositionReport(p geospatial.Point, symTable, symCode rune) string {
 	var buffer bytes.Buffer
 
@@ -90,6 +94,8 @@ func CreateCompressedPositionReport(p geospatial.Point, symTable, symCode rune) 
 	return buffer.String()
 }
 
+// DecodeCompressedPositionReport decodes a compressed position report into a geospatial.Point
+// and also returns the symbol table and code.
 func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, string, error) {
 	// Example:    =/5L!!<*e7OS]S
 
@@ -115,12 +121,12 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 
 		p.Lat, err = base91.DecodeBase91Lat([]byte(matches[2]))
 		if err != nil {
-			return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed latitude: %v\n", err)
+			return p, ' ', ' ', remains, fmt.Errorf("could not decode compressed latitude: %v", err)
 		}
 
 		p.Lon, err = base91.DecodeBase91Lon([]byte(matches[3]))
 		if err != nil {
-			return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed longitude: %v\n", err)
+			return p, ' ', ' ', remains, fmt.Errorf("could not decode compressed longitude: %v", err)
 		}
 
 		// A space in this position indicates that the report includes no altitude, speed/course, or radio range.
@@ -133,7 +139,7 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 				// This report has an encoded altitude reading
 				p.Altitude, err = base91.DecodeBase91Altitude([]byte(matches[5]))
 				if err != nil {
-					return p, ' ', ' ', remains, fmt.Errorf("Could not decode compressed altitude: %v\n", err)
+					return p, ' ', ' ', remains, fmt.Errorf("could not decode compressed altitude: %v", err)
 				}
 			} else if (byte(matches[5][0])-33) >= 0 && (byte(matches[5][0])-33) <= 89 {
 				p.Heading, p.Speed, err = base91.DecodeBase91CourseSpeed([]byte(matches[5]))
@@ -148,6 +154,8 @@ func DecodeCompressedPositionReport(c string) (geospatial.Point, rune, rune, str
 	return p, ' ', ' ', remains, nil
 }
 
+// DecodeUncompressedPositionReportWithoutTimestamp decodes an uncompressed position report that
+// lacks a timestamp into a geospatial.Poiint and also returns the symbol table and code.
 func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
 	// Example:   !4903.50N/07201.75W-
 
@@ -217,6 +225,8 @@ func DecodeUncompressedPositionReportWithoutTimestamp(c string) (geospatial.Poin
 
 }
 
+// DecodeUncompressedPositionReportWithTimestamp decodes an uncompressed position report with a timestamp
+// into a geospatial.Point and also returns the symbol table and code.
 func DecodeUncompressedPositionReportWithTimestamp(c string) (geospatial.Point, rune, rune, string, error) {
 	// Example:   @092345z4903.50N/07201.75W>
 

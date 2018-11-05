@@ -1,7 +1,7 @@
 // GoBalloon
 // messaging.go - Functions for creating and decoding APRS messages
 //
-// (c) 2014, Christopher Snell
+// (c) 2014-2018, Christopher Snell
 
 package aprs
 
@@ -15,6 +15,7 @@ import (
 	"github.com/chrissnell/GoBalloon/pkg/ax25"
 )
 
+// Message describes a station-to-station APRS message
 type Message struct {
 	Sender    ax25.APRSAddress
 	Recipient ax25.APRSAddress
@@ -24,7 +25,8 @@ type Message struct {
 	REJ       bool // Set true if this is a message REJ response
 }
 
-func CreateMessage(m Message) (string, error) {
+// EncodeMessage encodes Message into APRS message format
+func EncodeMessage(m Message) (string, error) {
 	var idtxt string
 
 	if len(m.ID) != 0 {
@@ -33,45 +35,44 @@ func CreateMessage(m Message) (string, error) {
 	return fmt.Sprintf(":%-9s:%s%s", m.Recipient.String(), m.Text, idtxt), nil
 }
 
-func CreateMessageACK(m Message) (string, error) {
+// EncodeMessageACK encodes a Message acknowledgement into APRS message ACK format
+func EncodeMessageACK(m Message) (string, error) {
 
 	if len(m.Sender.String()) == 0 {
-		return "", errors.New("Can't send an ACK without an addressee to reply to.")
+		return "", errors.New("can't send an ACK without an addressee to reply to")
 	}
 
 	if len(m.ID) == 0 {
-		return "", errors.New("Can't send an ACK without a message ID to ACK.")
+		return "", errors.New("can't send an ACK without a message ID to ACK")
 	}
 
 	return fmt.Sprintf(":%-9s:ack%s", m.Sender.String(), m.ID), nil
 }
 
+// DecodeMessage descodes a message in APRS message format into a Message
 func DecodeMessage(m string) (Message, string, error) {
 	var matches []string
 	dm := Message{}
 
 	if len(m) < 11 {
-		return dm, m, fmt.Errorf("Message length too short.  Should be >= 11 but is %v.", len(m))
+		return dm, m, fmt.Errorf("message length too short: should be >= 11 but is %v", len(m))
 	}
 
 	if m[0] != ':' || m[10] != ':' {
-		return dm, m, errors.New("Invalid message format.  1st and 10th characters should be ':'")
+		return dm, m, errors.New("invalid message format.  1st and 10th characters should be ':'")
 	}
 
 	// APRS message regex from Hell.   Looks for the message, optional ACK/REJ, message ID, and whatever else.
 	msgregex := regexp.MustCompile(`:([\w- ]{9}):([ackrejACKREJ]{3}[A-Za-z0-9]{1,5}$)?((.+)\{(\w{1,5}).*$)?(.*)$`)
 
+	// If the message doesn't match the regex above *at all*, we store it in remains.
+	// This kind of pattern allows us to run multiple parsers on an APRS packet and look
+	// for valid APRS data with all of them.
 	remains := msgregex.ReplaceAllString(m, "")
 
 	if matches = msgregex.FindStringSubmatch(m); len(matches) > 0 {
 
-		// For debugging odd messages...
-		// i := 0
-		// for _, v := range matches {
-		// 	fmt.Printf("[%v] ---> %v\n", i, v)
-		// 	i++
-		// }
-
+		//
 		if len(matches[6]) > 0 {
 			remains = matches[6]
 		}
@@ -83,7 +84,7 @@ func DecodeMessage(m string) (Message, string, error) {
 			dm.Recipient.Callsign = rparts[0]
 			ssid, err := strconv.ParseUint(rparts[1], 10, 8)
 			if err != nil {
-				return dm, remains, fmt.Errorf("Error parsing SSID %v:", rparts[1], err)
+				return dm, remains, fmt.Errorf("error parsing SSID %v: %v", rparts[1], err)
 			}
 			dm.Recipient.SSID = uint8(ssid)
 		} else {
@@ -113,8 +114,7 @@ func DecodeMessage(m string) (Message, string, error) {
 		}
 		return dm, remains, nil
 
-	} else {
-		return dm, remains, nil
 	}
+	return dm, remains, nil
 
 }

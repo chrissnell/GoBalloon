@@ -12,21 +12,26 @@ import (
 	"github.com/chrissnell/GoBalloon/pkg/geospatial"
 )
 
-type APRSData struct {
+// PacketData is a composite struct that contains the various types of data that may
+// be found within an APRS packet.  Some packets will contain more than one data type.
+type PacketData struct {
 	Position            geospatial.Point
 	Message             Message
-	StandardTelemetry   StdTelemetryReport
+	StandardTelemetry   StandardTelemetryReport
 	CompressedTelemetry CompressedTelemetryReport
 	SymbolTable         rune
 	SymbolCode          rune
 	Comment             string
 }
 
-func ParsePacket(p *ax25.APRSPacket) *APRSData {
+// DecodePacket decodes an AX.25 APRS packet into APRS data, decoding whatever APRS packet types
+// it can find.
+func DecodePacket(p *ax25.APRSPacket) *PacketData {
 
 	var err error
+	ad := new(PacketData)
 
-	ad := &APRSData{}
+	// For ease of decoding, convert the Body into a byte slice
 	d := []byte(p.Body)
 
 	// Position reports are at least 14 chars long
@@ -59,7 +64,7 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 	if len(d) >= 32 {
 		// Signature of a standard uncompressed telemetry packet
 		if d[0] == byte('T') && d[1] == byte('#') && d[5] == byte(',') {
-			ad.StandardTelemetry, p.Body = ParseUncompressedTelemetryReport(p.Body)
+			ad.StandardTelemetry, p.Body = DecodeUncompressedTelemetryReport(p.Body)
 		}
 	}
 
@@ -75,7 +80,7 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 	}
 
 	if len(d) >= 16 {
-		ad.CompressedTelemetry, p.Body, err = ParseCompressedTelemetryReport(p.Body)
+		ad.CompressedTelemetry, p.Body, err = DecodeCompressedTelemetryReport(p.Body)
 		if err != nil {
 			log.Printf("Error decoding compressed telemetry report: %v\n", err)
 		}
@@ -84,5 +89,4 @@ func ParsePacket(p *ax25.APRSPacket) *APRSData {
 
 	ad.Comment = p.Body
 	return ad
-
 }

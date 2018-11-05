@@ -7,11 +7,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/chrissnell/GoBalloon/aprs"
-	"github.com/chrissnell/GoBalloon/ax25"
-	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/chrissnell/GoBalloon/gps"
-	"github.com/tarm/goserial"
 	"io"
 	"log"
 	"net"
@@ -19,6 +14,12 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/chrissnell/GoBalloon/aprs"
+	"github.com/chrissnell/GoBalloon/ax25"
+	"github.com/chrissnell/GoBalloon/geospatial"
+	"github.com/chrissnell/GoBalloon/gps"
+	"github.com/tarm/goserial"
 )
 
 type APRSTNC struct {
@@ -197,7 +198,7 @@ func (a *APRSTNC) incomingAPRSEventHandler() {
 			log.Printf("Incoming APRS packet received: %+v\n", msg)
 
 			// Parse the packet
-			ad := aprs.ParsePacket(&msg)
+			ad := aprs.DecodePacket(&msg)
 
 			// Look for messages addressed to the balloon
 			if ad.Message.Recipient.Callsign == balloonAddr.Callsign && ad.Message.Recipient.SSID == balloonAddr.SSID {
@@ -209,7 +210,7 @@ func (a *APRSTNC) incomingAPRSEventHandler() {
 				}
 
 				// Send an ACK message in response to the cutdown command message
-				ack, err := aprs.CreateMessageACK(ad.Message)
+				ack, err := aprs.EncodeMessageACK(ad.Message)
 				if err != nil {
 					log.Printf("Error creating APRS message ACK: %v", err)
 				}
@@ -254,7 +255,7 @@ func (a *APRSTNC) outgoingAPRSEventHandler() {
 			msg.Text = m
 			msg.ID = "1"
 
-			mt, err := aprs.CreateMessage(msg)
+			mt, err := aprs.EncodeMessage(msg)
 			if err != nil {
 				log.Printf("Error creating outgoing message: %v\n", err)
 			}
