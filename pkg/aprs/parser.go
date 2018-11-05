@@ -1,7 +1,7 @@
 // GoBalloon
 // parser.go - Functions for parsing APRS packets and dispatching the appropriate decoder
 //
-// (c) 2014, Christopher Snell
+// (c) 2014-2018, Christopher Snell
 
 package aprs
 

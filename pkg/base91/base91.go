@@ -1,7 +1,7 @@
 // GoBalloon
 // base91.go - Functions for encoding and decoding APRS-style Base91 data
 //
-// (c) 2014, Christopher Snell
+// (c) 2014-2018, Christopher Snell
 
 package base91
 

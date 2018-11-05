@@ -1,7 +1,7 @@
 // GoBalloon
 // telemetry.go - Functions for creating and decoding APRS telemetry reports
 //
-// (c) 2014, Christopher Snell
+// (c) 2014-2018, Christopher Snell
 
 package aprs
 

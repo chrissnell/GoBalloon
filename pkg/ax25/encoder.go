@@ -1,6 +1,8 @@
 // GoBalloon
 // encoder.go - AX.25/KISS encoder
 //
+// Portions (c) 2014-2018 Chris Snell
+//
 // This code borrows from Dustin Sallings's go-aprs library.
 // https://github.com/dustin/go-aprs
 // I've modified the code to play nicely with hardware TNCs using KISS and

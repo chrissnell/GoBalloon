@@ -1,7 +1,7 @@
 // GoBalloon
 // geospatial.go - Functions for APRS-related geospatial calculations
 //
-// (c) 2014, Christopher Snell
+// (c) 2014-2018, Christopher Snell
 
 package geospatial
 

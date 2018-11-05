@@ -1,5 +1,7 @@
 // GoBalloon
 // packet.go - AX.25/APRS packet-related functions and data types
+//
+// (c) 2014-2018 Chris Snell
 
 package ax25
 
