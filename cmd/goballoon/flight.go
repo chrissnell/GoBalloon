@@ -6,11 +6,12 @@
 package main
 
 import (
-	"github.com/chrissnell/GoBalloon/gps"
-	"github.com/mrmorphic/hwio"
 	"log"
 	"sync"
 	"time"
+
+	"github.com/chrissnell/GoBalloon/pkg/gps"
+	"github.com/mrmorphic/hwio"
 )
 
 func FlightComputer(g *gps.GPSReading, wg *sync.WaitGroup) {

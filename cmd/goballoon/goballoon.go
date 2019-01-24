@@ -7,15 +7,16 @@ package main
 
 import (
 	"flag"
-	"github.com/chrissnell/GoBalloon/ax25"
-	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/chrissnell/GoBalloon/gps"
 	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"sync"
 	"syscall"
+
+	"github.com/chrissnell/GoBalloon/pkg/ax25"
+	"github.com/chrissnell/GoBalloon/pkg/geospatial"
+	"github.com/chrissnell/GoBalloon/pkg/gps"
 )
 
 var (

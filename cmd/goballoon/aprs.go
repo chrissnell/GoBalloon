@@ -15,17 +15,17 @@ import (
 	"sync"
 	"time"
 
-	"github.com/chrissnell/GoBalloon/aprs"
-	"github.com/chrissnell/GoBalloon/ax25"
-	"github.com/chrissnell/GoBalloon/geospatial"
-	"github.com/chrissnell/GoBalloon/gps"
+	"github.com/chrissnell/GoBalloon/pkg/aprs"
+	"github.com/chrissnell/GoBalloon/pkg/ax25"
+	"github.com/chrissnell/GoBalloon/pkg/geospatial"
+	"github.com/chrissnell/GoBalloon/pkg/gps"
 	"github.com/tarm/goserial"
 )
 
 type APRSTNC struct {
 	conn            io.ReadWriteCloser
 	netconn         net.Conn
-	gps             *gps.GPSReading
+	gps             *gps.CurrentPosition
 	aprsPosition    chan geospatial.Point
 	aprsMessage     chan string
 	connecting      bool
